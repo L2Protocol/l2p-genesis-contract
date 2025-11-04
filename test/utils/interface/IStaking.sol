@@ -48,7 +48,7 @@ interface Staking {
     function GOV_HUB_ADDR() external view returns (address);
     function GOV_TOKEN_ADDR() external view returns (address);
     function INCENTIVIZE_ADDR() external view returns (address);
-    function INIT_BSC_RELAYER_FEE() external view returns (uint256);
+    function INIT_L2P_RELAYER_FEE() external view returns (uint256);
     function INIT_MIN_DELEGATION() external view returns (uint256);
     function INIT_RELAYER_FEE() external view returns (uint256);
     function INIT_TRANSFER_GAS() external view returns (uint256);

@@ -252,7 +252,7 @@
   },
   {
     "type": "function",
-    "name": "INIT_BSC_RELAYER_FEE",
+    "name": "INIT_L2P_RELAYER_FEE",
     "inputs": [],
     "outputs": [
       {

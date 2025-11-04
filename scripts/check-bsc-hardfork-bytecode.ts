@@ -59,7 +59,7 @@ const TOKEN_RECOVER_PORTAL_ADDR = '0x0000000000000000000000000000000000003000';
 contractNameMap[TOKEN_RECOVER_PORTAL_ADDR] = 'TokenRecoverPortalContract'
 
 let hardforkName = process.env.HARDFORK
-let bscUrl = process.env.BSC_URL
+let bscUrl = process.env.L2P_URL
 let bscRepoDir = '/tmp/bsc'
 
 const checkHardforkBytecode = async () => {
@@ -164,7 +164,7 @@ const main = async () => {
   }
 
   if (!bscUrl) {
-    throw new Error('BSC_URL is required in .env')
+    throw new Error('L2P_URL is required in .env')
   }
 
   hardforkName = hardforkName.trim()

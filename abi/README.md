@@ -2,7 +2,7 @@
 
 | Contract Name         | Address                                    | ABI file name                                      |
 | --------------------- | ------------------------------------------ | -------------------------------------------------- |
-| BSCValidatorSet       | 0x0000000000000000000000000000000000001000 | [bscvalidatorset](bscvalidatorset.abi)             |
+| L2PValidatorSet       | 0x0000000000000000000000000000000000001000 | [bscvalidatorset](bscvalidatorset.abi)             |
 | SlashIndicator        | 0x0000000000000000000000000000000000001001 | [slashindicator](slashindicator.abi)               |
 | SystemReward          | 0x0000000000000000000000000000000000001002 | [systemreward](systemreward.abi)                   |
 | TendermintLightClient | 0x0000000000000000000000000000000000001003 | [tendermintlightclient](tendermintlightclient.abi) |
@@ -15,7 +15,7 @@
 | Staking               | 0x0000000000000000000000000000000000002001 | [staking](staking.abi)                             |
 | StakeHub              | 0x0000000000000000000000000000000000002002 | [stakehub](staking.abi)                            |
 | StakeCredit           | 0x0000000000000000000000000000000000002003 | [stakecredit](stakecredit.abi)                     |
-| BSCGovernor           | 0x0000000000000000000000000000000000002004 | [bscgovernor](bscgovernor.abi)                     |
+| L2PGovernor           | 0x0000000000000000000000000000000000002004 | [bscgovernor](bscgovernor.abi)                     |
 | GovToken              | 0x0000000000000000000000000000000000002005 | [govtoken](govtoken.abi)                           |
-| BSCTimelock           | 0x0000000000000000000000000000000000002006 | [bsctimelock](bsctimelock.abi)                     |
+| L2PTimelock           | 0x0000000000000000000000000000000000002006 | [bsctimelock](bsctimelock.abi)                     |
 | TokenRecoverPortal    | 0x0000000000000000000000000000000000003000 | [tokenrecoverportal](tokenrecoverportal.abi)                     |

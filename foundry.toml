@@ -38,5 +38,5 @@ number_underscore = 'preserve'
 multiline_func_header = 'params_first'
 
 [rpc_endpoints]
-bsc = "${RPC_BSC}" # set by .env
+bsc = "${RPC_L2P}" # set by .env
 local = "http://127.0.0.1:8545"

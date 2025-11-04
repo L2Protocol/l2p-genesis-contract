@@ -7,13 +7,13 @@ import "./lib/0.6.x/BytesToTypes.sol";
 import "./lib/0.6.x/Memory.sol";
 import "./interface/0.6.x/ISlashIndicator.sol";
 import "./interface/0.6.x/IParamSubscriber.sol";
-import "./interface/0.6.x/IBSCValidatorSet.sol";
+import "./interface/0.6.x/IL2PValidatorSet.sol";
 import "./interface/0.6.x/IApplication.sol";
 import "./interface/0.6.x/IStakeHub.sol";
 import "./lib/0.6.x/SafeMath.sol";
 import "./lib/0.6.x/RLPDecode.sol";
 
-contract BSCValidatorSet is IBSCValidatorSet, System, IParamSubscriber, IApplication {
+contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber, IApplication {
     using SafeMath for uint256;
 
     using RLPDecode for *;

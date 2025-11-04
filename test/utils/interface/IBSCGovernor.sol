@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.10;
 
-interface BSCGovernor {
+interface L2PGovernor {
     type ProposalState is uint8;
 
     struct Receipt {
