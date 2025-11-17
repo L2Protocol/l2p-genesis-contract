@@ -76,7 +76,7 @@ interface TokenManager {
             uint64 expireTime
         );
     function boundByMirror(address) external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function expireBind(string memory bep2Symbol) external payable returns (bool);
     function handleAckPackage(uint8 channelId, bytes memory msgBytes) external;
     function handleFailAckPackage(uint8 channelId, bytes memory msgBytes) external;

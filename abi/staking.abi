@@ -551,7 +551,7 @@
   },
   {
     "type": "function",
-    "name": "bSCRelayerFee",
+    "name": "l2pRelayerFee",
     "inputs": [],
     "outputs": [
       {
@@ -564,7 +564,7 @@
   },
   {
     "type": "function",
-    "name": "bscChainID",
+    "name": "l2pChainID",
     "inputs": [],
     "outputs": [
       {

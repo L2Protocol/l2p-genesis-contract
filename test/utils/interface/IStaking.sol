@@ -71,8 +71,8 @@ interface Staking {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function bSCRelayerFee() external view returns (uint256);
-    function bscChainID() external view returns (uint16);
+    function l2pRelayerFee() external view returns (uint256);
+    function l2pChainID() external view returns (uint16);
     function claimReward() external returns (uint256 amount);
     function claimUndelegated() external returns (uint256 amount);
     function delegate(address, uint256) external payable;

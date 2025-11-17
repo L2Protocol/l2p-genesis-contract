@@ -52,12 +52,12 @@ jobs:
             }
             
             const info = JSON.parse(prBody.substring(p1 + 3, p2))
-            console.log('info', info, info.hardfork, info.bsc)
+            console.log('info', info, info.hardfork, info.l2p)
             core.setOutput('hardfork', info.hardfork)
-            core.setOutput('bsc', info.bsc)
+            core.setOutput('l2p', info.l2p)
 
       - name: Compare genesis with hardfork bytecode files from L2P repo
         run: |
           export HARDFORK=${{ steps.extract_pr_description.outputs.hardfork }}
-          export L2P_URL=${{ steps.extract_pr_description.outputs.bsc }}
-          ts-node scripts/check-bsc-hardfork-bytecode.ts
+          export L2P_URL=${{ steps.extract_pr_description.outputs.l2p }}
+          ts-node scripts/check-l2p-hardfork-bytecode.ts

@@ -83,7 +83,7 @@ interface TokenHub {
     ) external payable returns (bool);
     function bep20ContractDecimals(address) external view returns (uint256);
     function bindToken(bytes32 bep2Symbol, address contractAddr, uint256 decimals) external;
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function cancelTokenRecoverLock(bytes32 tokenSymbol, address attacker) external;
     function cancelTransferIn(address tokenAddress, address attacker) external;
     function claimMigrationFund(uint256 amount) external returns (bool);

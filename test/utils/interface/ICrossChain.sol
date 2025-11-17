@@ -70,7 +70,7 @@ interface CrossChain {
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
     function batchSizeForOracle() external view returns (uint256);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function cancelTransfer(address tokenAddr, address attacker) external;
     function challenge(
         uint64[4] memory params,

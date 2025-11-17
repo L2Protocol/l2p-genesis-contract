@@ -42,7 +42,7 @@ interface RelayerHub {
     function WHITELIST_2() external view returns (address);
     function acceptBeingRelayer(address manager) external;
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function init() external;
     function isManager(address managerAddress) external view returns (bool);
     function isProvisionalRelayer(address relayerAddress) external view returns (bool);

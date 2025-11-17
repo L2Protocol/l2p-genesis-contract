@@ -162,7 +162,7 @@ def generate_system():
         os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
     )
 
-    replace_parameter(contract, "uint16 public constant bscChainID", f"0x{hex_chain_id}")
+    replace_parameter(contract, "uint16 public constant l2pChainID", f"0x{hex_chain_id}")
 
 
 def generate_system_reward():
@@ -362,7 +362,7 @@ def testnet():
 @main.command(help="Generate contracts for dev environment")
 def dev(
     dev_chain_id: int = 714,
-    init_burn_ratio: Annotated[str, typer.Option(help="init burn ratio of BscValidatorSet")] = "1000",
+    init_burn_ratio: Annotated[str, typer.Option(help="init burn ratio of L2pValidatorSet")] = "1000",
     source_chain_id: Annotated[
         str, typer.Option(help="source chain id of the token recover portal")] = "Binance-Chain-Ganges",
     stake_hub_protector: Annotated[str, typer.Option(help="assetProtector of StakeHub")] = "address(0xdEaD)",
@@ -485,7 +485,7 @@ def generate_validators(
                 {
                     "consensusAddr": vs[0],
                     "feeAddr": vs[1],
-                    "bscFeeAddr": vs[2],
+                    "l2pFeeAddr": vs[2],
                     "votingPower": vs[3],
                     "bLSPublicKey": vs[4],
                 }

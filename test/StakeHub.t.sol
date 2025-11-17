@@ -479,7 +479,7 @@ contract StakeHubTest is Deployer {
         }
         vm.prank(block.coinbase);
         vm.txGasPrice(0);
-        bscValidatorSet.updateValidatorSetV2(newConsensusAddrs, newVotingPower, newVoteAddrs);
+        l2pValidatorSet.updateValidatorSetV2(newConsensusAddrs, newVotingPower, newVoteAddrs);
     }
 
     function testEncodeLegacyBytes() public {

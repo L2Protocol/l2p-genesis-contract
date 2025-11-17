@@ -40,7 +40,7 @@ interface SystemReward {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function claimRewards(address payable to, uint256 amount) external returns (uint256);
     function isOperator(address addr) external view returns (bool);
     function numOperator() external view returns (uint256);

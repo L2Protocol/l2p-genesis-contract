@@ -50,7 +50,7 @@ interface RelayerIncentivize {
         bool fromSystemReward
     ) external returns (bool);
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function calculateHeaderRelayerWeight(uint256 count) external pure returns (uint256);
     function calculateTransferRelayerWeight(uint256 count) external pure returns (uint256);
     function callerCompensationDenominator() external view returns (uint256);

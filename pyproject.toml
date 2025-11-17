@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "bsc-genesis-contract"
-authors = ["BNB Chain"]
+name = "l2p-genesis-contract"
+authors = ["L2 Protocol Chain"]
 license = "Apache2.0"
 readme = "README.md"
 package-mode = false

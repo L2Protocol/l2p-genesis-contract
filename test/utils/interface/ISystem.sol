@@ -30,5 +30,5 @@ interface System {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
 }

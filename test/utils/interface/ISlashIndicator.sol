@@ -58,7 +58,7 @@ interface SlashIndicator {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function clean() external;
     function downtimeSlash(address validator, uint256 count, bool shouldRevert) external;
     function enableMaliciousVoteSlash() external view returns (bool);

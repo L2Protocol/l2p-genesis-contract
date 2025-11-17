@@ -15,7 +15,7 @@ contract GovHubTest is Deployer {
         bytes memory valueBytes = abi.encode(value);
         vm.expectEmit();
         emit failReasonWithStr("unknown param");
-        _updateParamByGovHub(key, valueBytes, address(bscValidatorSet));
+        _updateParamByGovHub(key, valueBytes, address(l2pValidatorSet));
     }
 
     function testGovTokenHub(uint256 value) public {

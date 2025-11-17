@@ -6,7 +6,7 @@ const validators = [{% for v in validators %}
    {
      'consensusAddr': '{{ v.consensusAddr }}',
      'feeAddr': '{{ v.feeAddr }}',
-     'bscFeeAddr': '{{ v.bscFeeAddr }}',
+     'l2pFeeAddr': '{{ v.l2pFeeAddr }}',
      'votingPower': {{ v.votingPower }},
    },{% endfor %}
 ];
@@ -38,7 +38,7 @@ function validatorUpdateRlpEncode(validators, bLSPublicKeys) {
   for (let i = 0; i < n; i++) {
     vals.push([
       validators[i].consensusAddr,
-      validators[i].bscFeeAddr,
+      validators[i].l2pFeeAddr,
       validators[i].feeAddr,
       validators[i].votingPower,
       bLSPublicKeys[i],

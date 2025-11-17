@@ -17,7 +17,7 @@ contract Staking is IStaking, System, IParamSubscriber, IApplication {
     uint256 public constant INIT_TRANSFER_GAS = 2300;
 
     uint256 public relayerFee;
-    uint256 public bSCRelayerFee;
+    uint256 public l2pRelayerFee;
     uint256 public minDelegation;
 
     mapping(address => uint256) delegated; // delegator => totalAmount
@@ -53,7 +53,7 @@ contract Staking is IStaking, System, IParamSubscriber, IApplication {
     modifier initParams() {
         if (!alreadyInit) {
             relayerFee = INIT_RELAYER_FEE;
-            bSCRelayerFee = INIT_L2P_RELAYER_FEE;
+            l2pRelayerFee = INIT_L2P_RELAYER_FEE;
             minDelegation = INIT_MIN_DELEGATION;
             transferGas = INIT_TRANSFER_GAS;
             alreadyInit = true;

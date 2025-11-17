@@ -75,7 +75,7 @@ interface L2PValidatorSet {
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
     function systemRewardAntiMEVRatio() external view returns (uint256);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function burnRatio() external view returns (uint256);
     function burnRatioInitialized() external view returns (bool);
     function canEnterMaintenance(uint256 index) external view returns (bool);

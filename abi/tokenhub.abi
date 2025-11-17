@@ -692,7 +692,7 @@
   },
   {
     "type": "function",
-    "name": "bscChainID",
+    "name": "l2pChainID",
     "inputs": [],
     "outputs": [
       {

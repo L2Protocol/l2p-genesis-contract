@@ -55,7 +55,7 @@ contract Deployer is Test {
     uint8 public constant CROSS_STAKE_CHANNELID = 0x10;
     uint8 public constant BC_FUSION_CHANNELID = 0x11;
 
-    L2PValidatorSet public bscValidatorSet;
+    L2PValidatorSet public l2pValidatorSet;
     SlashIndicator public slashIndicator;
     SystemReward public systemReward;
     TendermintLightClient public lightClient;
@@ -81,12 +81,12 @@ contract Deployer is Test {
 
     constructor() {
         // please use the following command to run the test on mainnet fork instead: forge test --rpc-url ${fork_url}
-        // vm.createSelectFork("bsc");
+        // vm.createSelectFork("l2p");
         assertEq(block.chainid, 56);
 
         // setup system contracts
-        bscValidatorSet = L2PValidatorSet(VALIDATOR_CONTRACT_ADDR);
-        vm.label(address(bscValidatorSet), "Validator");
+        l2pValidatorSet = L2PValidatorSet(VALIDATOR_CONTRACT_ADDR);
+        vm.label(address(l2pValidatorSet), "Validator");
         slashIndicator = SlashIndicator(SLASH_CONTRACT_ADDR);
         vm.label(address(slashIndicator), "SlashIndicator");
         systemReward = SystemReward(SYSTEM_REWARD_ADDR);

@@ -36,7 +36,7 @@ interface TendermintLightClient {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function bscChainID() external view returns (uint16);
+    function l2pChainID() external view returns (uint16);
     function chainID() external view returns (bytes32);
     function getAppHash(uint64 height) external view returns (bytes32);
     function getChainID() external view returns (string memory);

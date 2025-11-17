@@ -278,7 +278,7 @@ contract SlashIndicator is ISlashIndicator, System, IParamSubscriber, IApplicati
         require(header1.length != 0 && header2.length != 0, "empty header");
 
         bytes[] memory elements = new bytes[](3);
-        elements[0] = bscChainID.encodeUint();
+        elements[0] = l2pChainID.encodeUint();
         elements[1] = header1.encodeBytes();
         elements[2] = header2.encodeBytes();
 
@@ -406,7 +406,7 @@ contract SlashIndicator is ISlashIndicator, System, IParamSubscriber, IApplicati
         bytes[] memory elements = new bytes[](4);
         elements[0] = valAddr.encodeAddress();
         elements[1] = uint256(block.number).encodeUint();
-        elements[2] = uint256(bscChainID).encodeUint();
+        elements[2] = uint256(l2pChainID).encodeUint();
         elements[3] = uint256(block.timestamp).encodeUint();
         return elements.encodeList();
     }
@@ -415,7 +415,7 @@ contract SlashIndicator is ISlashIndicator, System, IParamSubscriber, IApplicati
         bytes[] memory elements = new bytes[](4);
         elements[0] = voteAddr.encodeBytes();
         elements[1] = uint256(block.number).encodeUint();
-        elements[2] = uint256(bscChainID).encodeUint();
+        elements[2] = uint256(l2pChainID).encodeUint();
         elements[3] = uint256(block.timestamp).encodeUint();
         return elements.encodeList();
     }
