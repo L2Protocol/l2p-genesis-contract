@@ -27,32 +27,6 @@
   },
   {
     "type": "function",
-    "name": "ERROR_TARGET_CONTRACT_FAIL",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "ERROR_TARGET_NOT_CONTRACT",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint32",
-        "internalType": "uint32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "GOVERNOR_ADDR",
     "inputs": [],
     "outputs": [
@@ -274,66 +248,6 @@
   },
   {
     "type": "function",
-    "name": "handleAckPackage",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "handleFailAckPackage",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "handleSynPackage",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "msgBytes",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "responsePayload",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "l2pChainID",
     "inputs": [],
     "outputs": [
@@ -344,73 +258,5 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "updateParam",
-    "inputs": [
-      {
-        "name": "key",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "value",
-        "type": "bytes",
-        "internalType": "bytes"
-      },
-      {
-        "name": "target",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "event",
-    "name": "failReasonWithBytes",
-    "inputs": [
-      {
-        "name": "message",
-        "type": "bytes",
-        "indexed": false,
-        "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "failReasonWithStr",
-    "inputs": [
-      {
-        "name": "message",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "paramChange",
-    "inputs": [
-      {
-        "name": "key",
-        "type": "string",
-        "indexed": false,
-        "internalType": "string"
-      },
-      {
-        "name": "value",
-        "type": "bytes",
-        "indexed": false,
-        "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
   }
 ]

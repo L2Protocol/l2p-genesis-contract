@@ -1,0 +1,74 @@
+[
+  {
+    "type": "event",
+    "name": "ParamChange",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "value",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "InvalidValue",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "value",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OnlyCoinbase",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OnlySystemContract",
+    "inputs": [
+      {
+        "name": "systemContract",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "OnlyZeroGasPrice",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownParam",
+    "inputs": [
+      {
+        "name": "key",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "value",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ]
+  }
+]

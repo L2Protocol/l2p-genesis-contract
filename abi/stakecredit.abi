@@ -5,32 +5,6 @@
   },
   {
     "type": "function",
-    "name": "BC_FUSION_CHANNELID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "STAKING_CHANNELID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "allowance",
     "inputs": [
       {
@@ -210,7 +184,7 @@
   },
   {
     "type": "function",
-    "name": "getPooledBNB",
+    "name": "getPooledL2P",
     "inputs": [
       {
         "name": "account",
@@ -229,7 +203,7 @@
   },
   {
     "type": "function",
-    "name": "getPooledBNBByShares",
+    "name": "getPooledL2PByShares",
     "inputs": [
       {
         "name": "shares",
@@ -248,7 +222,7 @@
   },
   {
     "type": "function",
-    "name": "getSharesByPooledBNB",
+    "name": "getSharesByPooledL2P",
     "inputs": [
       {
         "name": "l2pAmount",
@@ -309,7 +283,7 @@
   },
   {
     "type": "function",
-    "name": "lockedBNBs",
+    "name": "lockedL2Ps",
     "inputs": [
       {
         "name": "delegator",
@@ -416,7 +390,7 @@
   },
   {
     "type": "function",
-    "name": "totalPooledBNB",
+    "name": "totalPooledL2P",
     "inputs": [],
     "outputs": [
       {
@@ -429,7 +403,7 @@
   },
   {
     "type": "function",
-    "name": "totalPooledBNBRecord",
+    "name": "totalPooledL2PRecord",
     "inputs": [
       {
         "name": "",
@@ -849,7 +823,7 @@
   },
   {
     "type": "error",
-    "name": "ZeroTotalPooledBNB",
+    "name": "ZeroTotalPooledL2P",
     "inputs": []
   },
   {

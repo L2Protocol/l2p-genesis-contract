@@ -468,6 +468,30 @@
   },
   {
     "type": "function",
+    "name": "getNodeIDs",
+    "inputs": [
+      {
+        "name": "validatorsToQuery",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "consensusAddresses",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "nodeIDsList",
+        "type": "bytes32[][]",
+        "internalType": "bytes32[][]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getProtector",
     "inputs": [],
     "outputs": [
@@ -707,7 +731,7 @@
   },
   {
     "type": "function",
-    "name": "getValidatorTotalPooledBNBRecord",
+    "name": "getValidatorTotalPooledL2PRecord",
     "inputs": [
       {
         "name": "operatorAddress",
@@ -883,30 +907,6 @@
   },
   {
     "type": "function",
-    "name": "getNodeIDs",
-    "inputs": [
-      {
-        "name": "validatorsToQuery",
-        "type": "address[]",
-        "internalType": "address[]"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "consensusAddresses",
-        "type": "address[]",
-        "internalType": "address[]"
-      },
-      {
-        "name": "nodeIDsList",
-        "type": "bytes32[][]",
-        "internalType": "bytes32[][]"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "maliciousVoteSlash",
     "inputs": [
       {
@@ -959,7 +959,7 @@
   },
   {
     "type": "function",
-    "name": "minDelegationBNBChange",
+    "name": "minDelegationL2PChange",
     "inputs": [],
     "outputs": [
       {
@@ -972,7 +972,7 @@
   },
   {
     "type": "function",
-    "name": "minSelfDelegationBNB",
+    "name": "minSelfDelegationL2P",
     "inputs": [],
     "outputs": [
       {
