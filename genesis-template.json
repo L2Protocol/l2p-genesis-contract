@@ -78,10 +78,6 @@
       "balance": "0x0",
       "code": "{{tendermintLightClient}}"
     },
-    "0x0000000000000000000000000000000000001004": {
-      "balance": "{{initLockedL2POnTokenHub}}",
-      "code": "{{tokenHub}}"
-    },
     "0x0000000000000000000000000000000000001005": {
       "balance": "0x0",
       "code": "{{relayerIncentivize}}"
@@ -125,14 +121,7 @@
       "0x0000000000000000000000000000000000002006": {
       "balance": "0x0",
       "code": "{{timelock}}"
-    },
-    "0x0000000000000000000000000000000000003000": {
-      "balance": "0x0",
-      "code": "{{tokenRecoverPortal}}"
-    }{% for v in initHolders %},
-    "{{ v.address.replace('0x', '') }}": {
-      "balance": "0x{{ v.balance }}"
-    }{% endfor %}
+    }
   },
   "number": "0x0",
   "gasUsed": "0x0",

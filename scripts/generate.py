@@ -177,30 +177,6 @@ def generate_system_reward():
         replace(contract, "numOperator = 2;", "numOperator = 4;")
 
 
-def generate_token_hub(lock_period_for_token_recover):
-    contract = "TokenHub.sol"
-    backup_file(
-        os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
-    )
-
-    replace_parameter(
-        contract, "uint256 public constant LOCK_PERIOD_FOR_TOKEN_RECOVER", f"{lock_period_for_token_recover}"
-    )
-
-
-def generate_token_recover_portal(source_chain_id, token_recover_portal_protector):
-    contract = "TokenRecoverPortal.sol"
-    backup_file(
-        os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
-    )
-
-    replace_parameter(contract, "string public constant SOURCE_CHAIN_ID", f"\"{source_chain_id}\"")
-    replace(
-        contract, r"__Protectable_init_unchained\(.*\);",
-        f"__Protectable_init_unchained({token_recover_portal_protector});"
-    )
-
-
 def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
     contract = "L2PValidatorSet.sol"
     backup_file(
@@ -288,7 +264,6 @@ def mainnet():
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)
-    generate_token_recover_portal(source_chain_id, token_recover_portal_protector)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector
@@ -298,7 +273,6 @@ def mainnet():
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
-    generate_token_hub(lock_period_for_token_recover)
 
     generate_genesis()
     print("Generate genesis of mainnet successfully")
@@ -343,7 +317,6 @@ def testnet():
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)
-    generate_token_recover_portal(source_chain_id, token_recover_portal_protector)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector
@@ -353,7 +326,6 @@ def testnet():
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
-    generate_token_hub(lock_period_for_token_recover)
 
     generate_genesis("./genesis-testnet.json")
     print("Generate genesis of testnet successfully")
@@ -367,8 +339,6 @@ def dev(
         str, typer.Option(help="source chain id of the token recover portal")] = "Binance-Chain-Ganges",
     stake_hub_protector: Annotated[str, typer.Option(help="assetProtector of StakeHub")] = "address(0xdEaD)",
     governor_protector: Annotated[str, typer.Option(help="governorProtector of L2PGovernor")] = "address(0xdEaD)",
-    token_recover_portal_protector: Annotated[str,
-                                              typer.Option(help="protector of TokenRecoverPortal")] = "address(0xdEaD)",
     block_interval: Annotated[str, typer.Option(help="block interval of Parlia")] = "3 seconds",
     breathe_block_interval: Annotated[str, typer.Option(help="breath block interval of Parlia")] = "1 days",
     max_elected_validators: Annotated[str, typer.Option(help="maxElectedValidators of StakeHub")] = "45",
@@ -388,9 +358,7 @@ def dev(
         str, typer.Option(help="PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD of L2PGovernor")] = "10_000_000 ether",
     init_min_period_after_quorum: Annotated[
         str, typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days / BLOCK_INTERVAL)",
-    init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours",
-    lock_period_for_token_recover: Annotated[str,
-                                             typer.Option(help="LOCK_PERIOD_FOR_TOKEN_RECOVER of TokenHub")] = "7 days",
+    init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours"
 ):
     global network, chain_id, hex_chain_id
     network = "dev"
@@ -417,7 +385,6 @@ def dev(
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)
-    generate_token_recover_portal(source_chain_id, token_recover_portal_protector)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector
@@ -427,7 +394,6 @@ def dev(
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
-    generate_token_hub(lock_period_for_token_recover)
 
     generate_genesis("./genesis-dev.json")
     print("Generate genesis of dev environment successfully")

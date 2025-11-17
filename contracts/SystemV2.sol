@@ -76,9 +76,4 @@ contract SystemV2 {
         if (msg.sender != STAKE_HUB_ADDR) revert OnlySystemContract(STAKE_HUB_ADDR);
         _;
     }
-
-    modifier onlyTokenRecoverPortal() {
-        require(msg.sender == TOKEN_RECOVER_PORTAL_ADDR, "the msg sender must be token recover portal");
-        _;
-    }
 }

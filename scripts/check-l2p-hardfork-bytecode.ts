@@ -19,9 +19,6 @@ contractNameMap[SYSTEM_REWARD_ADDR] = 'SystemRewardContract'
 const LIGHT_CLIENT_ADDR = '0x0000000000000000000000000000000000001003';
 contractNameMap[LIGHT_CLIENT_ADDR] = 'LightClientContract'
 
-const TOKEN_HUB_ADDR = '0x0000000000000000000000000000000000001004';
-contractNameMap[TOKEN_HUB_ADDR] = 'TokenHubContract'
-
 const INCENTIVIZE_ADDR = '0x0000000000000000000000000000000000001005';
 contractNameMap[INCENTIVIZE_ADDR] = 'RelayerIncentivizeContract'
 
@@ -54,9 +51,6 @@ contractNameMap[GOV_TOKEN_ADDR] = 'GovTokenContract'
 
 const TIMELOCK_ADDR = '0x0000000000000000000000000000000000002006';
 contractNameMap[TIMELOCK_ADDR] = 'TimelockContract'
-
-const TOKEN_RECOVER_PORTAL_ADDR = '0x0000000000000000000000000000000000003000';
-contractNameMap[TOKEN_RECOVER_PORTAL_ADDR] = 'TokenRecoverPortalContract'
 
 let hardforkName = process.env.HARDFORK
 let l2pUrl = process.env.L2P_URL

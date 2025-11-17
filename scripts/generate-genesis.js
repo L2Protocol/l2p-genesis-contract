@@ -10,11 +10,6 @@ program.version('0.0.1');
 program.option('-c, --chainId <chainId>', 'chain id', '714');
 program.option('-o, --output <output-file>', 'Genesis json file', './genesis.json');
 program.option('-t, --template <template>', 'Genesis template json', './genesis-template.json');
-program.option(
-  '--initLockedL2POnTokenHub <initLockedL2POnTokenHub>',
-  'initLockedL2POnTokenHub',
-  '176405560900000000000000000'
-);
 program.parse(process.argv);
 
 // get byte code from compiled contract
@@ -47,7 +42,6 @@ Promise.all([
   readByteCode('systemRewardContract', 'out/SystemReward.sol/SystemReward.json'),
   readByteCode('slashContract', 'out/SlashIndicator.sol/SlashIndicator.json'),
   readByteCode('tendermintLightClient', 'out/TendermintLightClient.sol/TendermintLightClient.json'),
-  readByteCode('tokenHub', 'out/TokenHub.sol/TokenHub.json'),
   readByteCode('relayerHub', 'out/RelayerHub.sol/RelayerHub.json'),
   readByteCode('relayerIncentivize', 'out/RelayerIncentivize.sol/RelayerIncentivize.json'),
   readByteCode('govHub', 'out/GovHub.sol/GovHub.json'),
@@ -58,11 +52,9 @@ Promise.all([
   readByteCode('stakeCredit', 'out/StakeCredit.sol/StakeCredit.json'),
   readByteCode('governor', 'out/L2PGovernor.sol/L2PGovernor.json'),
   readByteCode('govToken', 'out/GovToken.sol/GovToken.json'),
-  readByteCode('timelock', 'out/L2PTimelock.sol/L2PTimelock.json'),
-  readByteCode('tokenRecoverPortal', 'out/TokenRecoverPortal.sol/TokenRecoverPortal.json'),
+  readByteCode('timelock', 'out/L2PTimelock.sol/L2PTimelock.json')
 ]).then((result) => {
   const data = {
-    initLockedL2POnTokenHub: program.initLockedL2POnTokenHub,
     chainId: program.chainId,
     initHolders: init_holders,
     extraData: web3.utils.bytesToHex(validators.extraValidatorBytes),

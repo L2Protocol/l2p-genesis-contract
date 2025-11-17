@@ -13,7 +13,6 @@ contract System {
     address public constant SLASH_CONTRACT_ADDR = 0x0000000000000000000000000000000000001001;
     address public constant SYSTEM_REWARD_ADDR = 0x0000000000000000000000000000000000001002;
     address public constant LIGHT_CLIENT_ADDR = 0x0000000000000000000000000000000000001003;
-    address public constant TOKEN_HUB_ADDR = 0x0000000000000000000000000000000000001004;
     address public constant INCENTIVIZE_ADDR = 0x0000000000000000000000000000000000001005;
     address public constant RELAYERHUB_CONTRACT_ADDR = 0x0000000000000000000000000000000000001006;
     address public constant GOV_HUB_ADDR = 0x0000000000000000000000000000000000001007;
@@ -49,11 +48,6 @@ contract System {
 
     modifier onlySlash() {
         require(msg.sender == SLASH_CONTRACT_ADDR, "the message sender must be slash contract");
-        _;
-    }
-
-    modifier onlyTokenHub() {
-        require(msg.sender == TOKEN_HUB_ADDR, "the message sender must be token hub contract");
         _;
     }
 
@@ -94,11 +88,6 @@ contract System {
 
     modifier onlyGovernorTimelock() {
         require(msg.sender == TIMELOCK_ADDR, "the msg sender must be governor timelock contract");
-        _;
-    }
-
-    modifier onlyTokenRecoverPortal() {
-        require(msg.sender == TOKEN_RECOVER_PORTAL_ADDR, "the msg sender must be token recover portal");
         _;
     }
 

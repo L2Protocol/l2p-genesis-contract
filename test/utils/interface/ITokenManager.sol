@@ -20,7 +20,6 @@ interface TokenManager {
     function BIND_STATUS_REJECTED() external view returns (uint8);
     function BIND_STATUS_SYMBOL_MISMATCH() external view returns (uint8);
     function BIND_STATUS_TIMEOUT() external view returns (uint8);
-    function BIND_STATUS_TOO_MUCH_TOKENHUB_BALANCE() external view returns (uint8);
     function BIND_STATUS_TOTAL_SUPPLY_MISMATCH() external view returns (uint8);
     function CODE_OK() external view returns (uint32);
     function CROSS_CHAIN_CONTRACT_ADDR() external view returns (address);
