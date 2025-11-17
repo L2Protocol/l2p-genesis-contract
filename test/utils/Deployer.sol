@@ -11,7 +11,6 @@ import "./interface/ISlashIndicator.sol";
 import "./interface/IStaking.sol";
 import "./interface/ISystemReward.sol";
 import "./interface/ITokenManager.sol";
-import "./interface/ITendermintLightClient.sol";
 import "./interface/IStakeHub.sol";
 import "./interface/IStakeCredit.sol";
 import "./interface/IL2PGovernor.sol";
@@ -27,7 +26,6 @@ contract Deployer is Test {
     address payable public constant VALIDATOR_CONTRACT_ADDR = payable(0x0000000000000000000000000000000000001000);
     address public constant SLASH_CONTRACT_ADDR = payable(0x0000000000000000000000000000000000001001);
     address payable public constant SYSTEM_REWARD_ADDR = payable(0x0000000000000000000000000000000000001002);
-    address public constant LIGHT_CLIENT_ADDR = payable(0x0000000000000000000000000000000000001003);
     address payable public constant INCENTIVIZE_ADDR = payable(0x0000000000000000000000000000000000001005);
     address public constant RELAYERHUB_CONTRACT_ADDR = payable(0x0000000000000000000000000000000000001006);
     address public constant GOV_HUB_ADDR = payable(0x0000000000000000000000000000000000001007);
@@ -39,7 +37,6 @@ contract Deployer is Test {
     address payable public constant GOVERNOR_ADDR = payable(0x0000000000000000000000000000000000002004);
     address public constant GOV_TOKEN_ADDR = payable(0x0000000000000000000000000000000000002005);
     address payable public constant TIMELOCK_ADDR = payable(0x0000000000000000000000000000000000002006);
-    address public constant TOKEN_RECOVER_PORTAL_ADDR = payable(0x0000000000000000000000000000000000003000);
 
     uint8 public constant BIND_CHANNELID = 0x01;
     uint8 public constant TRANSFER_IN_CHANNELID = 0x02;
@@ -55,7 +52,6 @@ contract Deployer is Test {
     L2PValidatorSet public l2pValidatorSet;
     SlashIndicator public slashIndicator;
     SystemReward public systemReward;
-    TendermintLightClient public lightClient;
     RelayerIncentivize public incentivize;
     RelayerHub public relayerHub;
     GovHub public govHub;
@@ -86,8 +82,6 @@ contract Deployer is Test {
         vm.label(address(slashIndicator), "SlashIndicator");
         systemReward = SystemReward(SYSTEM_REWARD_ADDR);
         vm.label(address(systemReward), "SystemReward");
-        lightClient = TendermintLightClient(LIGHT_CLIENT_ADDR);
-        vm.label(address(lightClient), "LightClient");
         incentivize = RelayerIncentivize(INCENTIVIZE_ADDR);
         vm.label(address(incentivize), "RelayerIncentivize");
         relayerHub = RelayerHub(RELAYERHUB_CONTRACT_ADDR);
@@ -118,8 +112,6 @@ contract Deployer is Test {
         vm.etch(SLASH_CONTRACT_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("SystemReward.sol:SystemReward");
         vm.etch(SYSTEM_REWARD_ADDR, deployedCode);
-        deployedCode = vm.getDeployedCode("TendermintLightClient.sol:TendermintLightClient");
-        vm.etch(LIGHT_CLIENT_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("RelayerIncentivize.sol:RelayerIncentivize");
         vm.etch(INCENTIVIZE_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("RelayerHub.sol:RelayerHub");

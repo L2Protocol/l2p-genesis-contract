@@ -40,7 +40,6 @@ interface SlashIndicator {
     function INCENTIVIZE_ADDR() external view returns (address);
     function INIT_FELONY_SLASH_REWARD_RATIO() external view returns (uint256);
     function INIT_FELONY_SLASH_SCOPE() external view returns (uint256);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function MISDEMEANOR_THRESHOLD() external view returns (uint256);
     function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function SLASH_CHANNELID() external view returns (uint8);
@@ -51,9 +50,7 @@ interface SlashIndicator {
     function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);

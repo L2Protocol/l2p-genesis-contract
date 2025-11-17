@@ -48,7 +48,6 @@ interface CrossChain {
     function INIT_CANCEL_TRANSFER_QUORUM() external view returns (uint16);
     function INIT_REOPEN_QUORUM() external view returns (uint16);
     function INIT_SUSPEND_QUORUM() external view returns (uint16);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function REOPEN_PROPOSAL() external view returns (bytes32);
     function SLASH_CHANNELID() external view returns (uint8);
@@ -62,9 +61,7 @@ interface CrossChain {
     function SYN_PACKAGE() external view returns (uint8);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);

@@ -41,7 +41,6 @@ Promise.all([
   readByteCode('validatorContract', 'out/L2PValidatorSet.sol/L2PValidatorSet.json'),
   readByteCode('systemRewardContract', 'out/SystemReward.sol/SystemReward.json'),
   readByteCode('slashContract', 'out/SlashIndicator.sol/SlashIndicator.json'),
-  readByteCode('tendermintLightClient', 'out/TendermintLightClient.sol/TendermintLightClient.json'),
   readByteCode('relayerHub', 'out/RelayerHub.sol/RelayerHub.json'),
   readByteCode('relayerIncentivize', 'out/RelayerIncentivize.sol/RelayerIncentivize.json'),
   readByteCode('govHub', 'out/GovHub.sol/GovHub.json'),

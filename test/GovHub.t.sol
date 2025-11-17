@@ -18,17 +18,6 @@ contract GovHubTest is Deployer {
         _updateParamByGovHub(key, valueBytes, address(l2pValidatorSet));
     }
 
-    function testGovLightClient(uint256 value) public {
-        vm.assume(value > 0);
-        vm.assume(value <= 1e18);
-
-        bytes memory key = "rewardForValidatorSetChange";
-        bytes memory valueBytes = abi.encode(value);
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(lightClient));
-    }
-
     function testGovIncentivize(uint256 value1, uint256 value2, uint256 value3) public {
         uint256 denominator = incentivize.headerRelayerRewardRateDenominator();
         vm.assume(value1 <= denominator);

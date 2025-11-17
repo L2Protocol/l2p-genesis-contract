@@ -53,7 +53,6 @@ interface L2PValidatorSet {
     function INIT_SYSTEM_REWARD_RATIO() external view returns (uint256);
     function INIT_VALIDATORSET_BYTES() external view returns (bytes memory);
     function JAIL_MESSAGE_TYPE() external view returns (uint8);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function MAX_NUM_OF_VALIDATORS() external view returns (uint256);
     function MAX_SYSTEM_REWARD_BALANCE() external view returns (uint256);
     function PRECISION() external view returns (uint256);
@@ -66,9 +65,7 @@ interface L2PValidatorSet {
     function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATORS_UPDATE_MESSAGE_TYPE() external view returns (uint8);

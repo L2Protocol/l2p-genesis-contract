@@ -17,7 +17,6 @@ contract SystemRewardTest is Deployer {
     }
 
     function testOperator() public {
-        assertTrue(systemReward.isOperator(LIGHT_CLIENT_ADDR), "light client should be operator");
         assertTrue(systemReward.isOperator(INCENTIVIZE_ADDR), "relayer incentivize should be operator");
         assertTrue(!systemReward.isOperator(_getNextUserAddress()), "address should not be operator");
     }
@@ -28,7 +27,6 @@ contract SystemRewardTest is Deployer {
         payable(address(systemReward)).transfer(1 ether);
         vm.expectEmit(true, false, false, true, address(systemReward));
         emit rewardTo(newAccount, 1 ether);
-        vm.prank(LIGHT_CLIENT_ADDR);
         systemReward.claimRewards(newAccount, 1 ether);
 
         vm.expectRevert("only operator is allowed to call the method");
@@ -37,7 +35,6 @@ contract SystemRewardTest is Deployer {
         vm.deal(address(systemReward), 0);
         vm.expectEmit(false, false, false, false, address(systemReward));
         emit rewardEmpty();
-        vm.prank(LIGHT_CLIENT_ADDR);
         systemReward.claimRewards(newAccount, 1 ether);
     }
 

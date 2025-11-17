@@ -74,10 +74,6 @@
       "balance": "0x0",
       "code": "{{systemRewardContract}}"
     },
-    "0x0000000000000000000000000000000000001003": {
-      "balance": "0x0",
-      "code": "{{tendermintLightClient}}"
-    },
     "0x0000000000000000000000000000000000001005": {
       "balance": "0x0",
       "code": "{{relayerIncentivize}}"

@@ -52,7 +52,6 @@ interface Staking {
     function INIT_MIN_DELEGATION() external view returns (uint256);
     function INIT_RELAYER_FEE() external view returns (uint256);
     function INIT_TRANSFER_GAS() external view returns (uint256);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function LOCK_TIME() external view returns (uint256);
     function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function SLASH_CHANNELID() external view returns (uint8);
@@ -64,9 +63,7 @@ interface Staking {
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TEN_DECIMALS() external view returns (uint256);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);

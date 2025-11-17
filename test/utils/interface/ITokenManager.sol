@@ -30,7 +30,6 @@ interface TokenManager {
     function GOV_HUB_ADDR() external view returns (address);
     function GOV_TOKEN_ADDR() external view returns (address);
     function INCENTIVIZE_ADDR() external view returns (address);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function LOG_MAX_UINT256() external view returns (uint256);
     function MAXIMUM_BEP20_SYMBOL_LEN() external view returns (uint8);
     function MAX_BEP2_TOTAL_SUPPLY() external view returns (uint256);
@@ -53,9 +52,7 @@ interface TokenManager {
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TEN_DECIMALS() external view returns (uint256);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function UNBIND_PACKAGE() external view returns (uint8);

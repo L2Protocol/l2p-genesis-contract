@@ -2,7 +2,6 @@ pragma solidity 0.6.4;
 
 import "./interface/0.6.x/ISystemReward.sol";
 import "./interface/0.6.x/IRelayerHub.sol";
-import "./interface/0.6.x/ILightClient.sol";
 
 contract System {
     bool public alreadyInit;
@@ -12,7 +11,6 @@ contract System {
     address public constant VALIDATOR_CONTRACT_ADDR = 0x0000000000000000000000000000000000001000;
     address public constant SLASH_CONTRACT_ADDR = 0x0000000000000000000000000000000000001001;
     address public constant SYSTEM_REWARD_ADDR = 0x0000000000000000000000000000000000001002;
-    address public constant LIGHT_CLIENT_ADDR = 0x0000000000000000000000000000000000001003;
     address public constant INCENTIVIZE_ADDR = 0x0000000000000000000000000000000000001005;
     address public constant RELAYERHUB_CONTRACT_ADDR = 0x0000000000000000000000000000000000001006;
     address public constant GOV_HUB_ADDR = 0x0000000000000000000000000000000000001007;
@@ -24,7 +22,6 @@ contract System {
     address public constant GOVERNOR_ADDR = 0x0000000000000000000000000000000000002004;
     address public constant GOV_TOKEN_ADDR = 0x0000000000000000000000000000000000002005;
     address public constant TIMELOCK_ADDR = 0x0000000000000000000000000000000000002006;
-    address public constant TOKEN_RECOVER_PORTAL_ADDR = 0x0000000000000000000000000000000000003000;
 
     modifier onlyCoinbase() {
         require(msg.sender == block.coinbase, "the message sender must be the block producer");

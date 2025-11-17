@@ -25,7 +25,6 @@ interface RelayerIncentivize {
     function HEADER_RELAYER_REWARD_RATE_DENOMINATOR() external view returns (uint256);
     function HEADER_RELAYER_REWARD_RATE_MOLECULE() external view returns (uint256);
     function INCENTIVIZE_ADDR() external view returns (address);
-    function LIGHT_CLIENT_ADDR() external view returns (address);
     function MAXIMUM_WEIGHT() external view returns (uint256);
     function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function ROUND_SIZE() external view returns (uint256);
@@ -37,9 +36,7 @@ interface RelayerIncentivize {
     function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_HUB_ADDR() external view returns (address);
     function TOKEN_MANAGER_ADDR() external view returns (address);
-    function TOKEN_RECOVER_PORTAL_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
