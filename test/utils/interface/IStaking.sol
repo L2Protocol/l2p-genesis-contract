@@ -37,7 +37,7 @@ interface Staking {
     function CROSS_CHAIN_CONTRACT_ADDR() external view returns (address);
     function CROSS_STAKE_CHANNELID() external view returns (uint8);
     function ERROR_FAIL_DECODE() external view returns (uint32);
-    function ERROR_WITHDRAW_BNB() external view returns (uint32);
+    function ERROR_WITHDRAW_L2P() external view returns (uint32);
     function EVENT_DELEGATE() external view returns (uint8);
     function EVENT_DISTRIBUTE_REWARD() external view returns (uint8);
     function EVENT_DISTRIBUTE_UNDELEGATED() external view returns (uint8);

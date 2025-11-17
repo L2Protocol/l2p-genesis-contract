@@ -139,7 +139,7 @@ def generate_governor(
     replace_parameter(contract, "uint256 private constant INIT_PROPOSAL_THRESHOLD", f"{init_proposal_threshold}")
     replace_parameter(contract, "uint256 private constant INIT_QUORUM_NUMERATOR", f"{init_quorum_numerator}")
     replace_parameter(
-        contract, "uint256 private constant PROPOSE_START_GOVBNB_SUPPLY_THRESHOLD", f"{propose_start_threshold}"
+        contract, "uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD", f"{propose_start_threshold}"
     )
     replace_parameter(
         contract, "uint64 private constant INIT_MIN_PERIOD_AFTER_QUORUM", f"{init_min_period_after_quorum}"
@@ -385,7 +385,7 @@ def dev(
     init_proposal_threshold: Annotated[str, typer.Option(help="INIT_PROPOSAL_THRESHOLD of L2PGovernor")] = "200 ether",
     init_quorum_numerator: Annotated[str, typer.Option(help="INIT_QUORUM_NUMERATOR of L2PGovernor")] = "10",
     propose_start_threshold: Annotated[
-        str, typer.Option(help="PROPOSE_START_GOVBNB_SUPPLY_THRESHOLD of L2PGovernor")] = "10_000_000 ether",
+        str, typer.Option(help="PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD of L2PGovernor")] = "10_000_000 ether",
     init_min_period_after_quorum: Annotated[
         str, typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days / BLOCK_INTERVAL)",
     init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours",

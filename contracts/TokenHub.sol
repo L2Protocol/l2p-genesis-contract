@@ -19,14 +19,14 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
 
     uint256 public constant MAX_BEP2_TOTAL_SUPPLY = 9000000000000000000;
     uint8 public constant BEP2_TOKEN_DECIMALS = 8;
-    bytes32 public constant BEP2_TOKEN_SYMBOL_FOR_BNB =
-        0x424E420000000000000000000000000000000000000000000000000000000000; // "BNB"
+    bytes32 public constant BEP2_TOKEN_SYMBOL_FOR_L2P =
+        0x424E420000000000000000000000000000000000000000000000000000000000; // "L2P"
 
     uint256 public constant INIT_MINIMUM_RELAY_FEE = 2e15;
     uint256 public constant REWARD_UPPER_LIMIT = 1e18;
     uint256 public constant TEN_DECIMALS = 1e10;
     uint256 public constant MAX_GAS_FOR_CALLING_BEP20 = 50000;
-    uint256 public constant MAX_GAS_FOR_TRANSFER_BNB = 10000;
+    uint256 public constant MAX_GAS_FOR_TRANSFER_L2P = 10000;
 
     uint256 public relayFee;
 
@@ -39,9 +39,9 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
     uint256 public lockPeriod;  // @dev deprecated
     // the lock Period for token recover
     uint256 public constant LOCK_PERIOD_FOR_TOKEN_RECOVER = 7 days;
-    // token address => largeTransferLimit amount, address(0) means BNB
+    // token address => largeTransferLimit amount, address(0) means L2P
     mapping(address => uint256) public largeTransferLimitMap;  // @dev deprecated
-    // token address => recipient address => lockedAmount + unlockAt, address(0) means BNB
+    // token address => recipient address => lockedAmount + unlockAt, address(0) means L2P
     mapping(address => mapping(address => LockInfo)) public lockInfoMap;
     uint8 internal reentryLock;
 
@@ -87,7 +87,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
 
     function init() external onlyNotInit {
         relayFee = INIT_MINIMUM_RELAY_FEE;
-        bep20ContractDecimals[address(0x0)] = 18; // BNB decimals is 18
+        bep20ContractDecimals[address(0x0)] = 18; // L2P decimals is 18
         alreadyInit = true;
     }
 
@@ -177,7 +177,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
 
         bool _success;
         if (tokenAddress == address(0x0)) {
-            (_success,) = recipient.call{ gas: MAX_GAS_FOR_TRANSFER_BNB, value: _amount }("");
+            (_success,) = recipient.call{ gas: MAX_GAS_FOR_TRANSFER_L2P, value: _amount }("");
         } else {
             _success = IBEP20(tokenAddress).transfer{ gas: MAX_GAS_FOR_CALLING_BEP20 }(recipient, _amount);
         }
@@ -205,7 +205,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
     ) external override onlyInit onlyTokenRecoverPortal {
         require(amount <= MAX_BEP2_TOTAL_SUPPLY, "amount is too large, exceed maximum bep2 token amount");
         uint256 convertedAmount;
-        if (tokenSymbol != BEP2_TOKEN_SYMBOL_FOR_BNB) {
+        if (tokenSymbol != BEP2_TOKEN_SYMBOL_FOR_L2P) {
             address contractAddr = bep2SymbolToContractAddr[tokenSymbol];
             if (contractAddr == address(0x00)) {
                 // if the token is not bound, just emit an event
@@ -219,7 +219,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
             require(IBEP20(contractAddr).balanceOf(address(this)) >= convertedAmount, "insufficient balance");
             _lockRecoverToken(tokenSymbol, contractAddr, convertedAmount, recipient);
         } else {
-            convertedAmount = amount.mul(TEN_DECIMALS); // native bnb decimals is 8 on BC, while the native bnb decimals on L2P is 18
+            convertedAmount = amount.mul(TEN_DECIMALS); // native l2p decimals is 8 on BC, while the native l2p decimals on L2P is 18
             require(address(this).balance >= convertedAmount, "insufficient balance");
             address contractAddr = address(0x00);
             _lockRecoverToken(tokenSymbol, contractAddr, convertedAmount, recipient);
@@ -237,7 +237,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
 
     function cancelTokenRecoverLock(bytes32 tokenSymbol, address attacker) external override onlyTokenRecoverPortal {
         address tokenAddress = address(0x00);
-        if (tokenSymbol != BEP2_TOKEN_SYMBOL_FOR_BNB) {
+        if (tokenSymbol != BEP2_TOKEN_SYMBOL_FOR_L2P) {
             tokenAddress = bep2SymbolToContractAddr[tokenSymbol];
             require(tokenAddress != address(0x00), "invalid symbol");
         }
@@ -269,14 +269,14 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
     }
 
     /**
-     * @dev request a batch cross-chain BNB transfers from L2P to BC
+     * @dev request a batch cross-chain L2P transfers from L2P to BC
      *
      * @param recipientAddrs The destination address of the cross-chain transfer on BC.
      * @param amounts The amounts to transfer
      * @param refundAddrs The refund addresses that receive the refund funds while failed to cross-chain transfer
      * @param expireTime The expire time for these cross-chain transfers
      */
-    function batchTransferOutBNB(
+    function batchTransferOutL2P(
         address[] calldata recipientAddrs,
         uint256[] calldata amounts,
         address[] calldata refundAddrs,
@@ -341,7 +341,7 @@ contract TokenHub is ITokenHub, System, IParamSubscriber, IApplication, ISystemR
         return string(bep2Symbol);
     }
 
-    function withdrawStakingBNB(uint256 amount) external override returns (bool) {
+    function withdrawStakingL2P(uint256 amount) external override returns (bool) {
         revert("deprecated");
     }
 }

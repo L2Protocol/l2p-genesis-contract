@@ -19,7 +19,7 @@ contract GovToken is
 {
     /*----------------- constants -----------------*/
     string private constant NAME = "L2P Governance Token";
-    string private constant SYMBOL = "govBNB";
+    string private constant SYMBOL = "govL2P";
 
     /*----------------- errors -----------------*/
     // @notice signature: 0x8cd22d19
@@ -43,7 +43,7 @@ contract GovToken is
 
     /*----------------- external functions -----------------*/
     /**
-     * @dev Sync the account's govBNB amount to the actual BNB value of the StakingCredit he holds
+     * @dev Sync the account's govL2P amount to the actual L2P value of the StakingCredit he holds
      * @param stakeCredit the stakeCredit Token contract
      * @param account the account to sync gov tokens to
      */
@@ -52,7 +52,7 @@ contract GovToken is
     }
 
     /**
-     * @dev Batch sync the account's govBNB amount to the actual BNB value of the StakingCredit he holds
+     * @dev Batch sync the account's govL2P amount to the actual L2P value of the StakingCredit he holds
      * @param stakeCredits the stakeCredit Token contracts
      * @param account the account to sync gov tokens to
      */
@@ -64,7 +64,7 @@ contract GovToken is
     }
 
     /**
-     * @dev delegate govBNB votes to delegatee
+     * @dev delegate govL2P votes to delegatee
      * @param delegator the delegator
      * @param delegatee the delegatee
      */
@@ -84,16 +84,16 @@ contract GovToken is
 
     /*----------------- internal functions -----------------*/
     function _sync(address stakeCredit, address account) internal {
-        uint256 latestBNBAmount = IStakeCredit(stakeCredit).getPooledBNB(account);
+        uint256 latestL2PAmount = IStakeCredit(stakeCredit).getPooledL2P(account);
         uint256 _mintedAmount = mintedMap[stakeCredit][account];
 
-        if (_mintedAmount < latestBNBAmount) {
-            uint256 _needMint = latestBNBAmount - _mintedAmount;
-            mintedMap[stakeCredit][account] = latestBNBAmount;
+        if (_mintedAmount < latestL2PAmount) {
+            uint256 _needMint = latestL2PAmount - _mintedAmount;
+            mintedMap[stakeCredit][account] = latestL2PAmount;
             _mint(account, _needMint);
-        } else if (_mintedAmount > latestBNBAmount) {
-            uint256 _needBurn = _mintedAmount - latestBNBAmount;
-            mintedMap[stakeCredit][account] = latestBNBAmount;
+        } else if (_mintedAmount > latestL2PAmount) {
+            uint256 _needBurn = _mintedAmount - latestL2PAmount;
+            mintedMap[stakeCredit][account] = latestL2PAmount;
             _burn(account, _needBurn);
         }
     }

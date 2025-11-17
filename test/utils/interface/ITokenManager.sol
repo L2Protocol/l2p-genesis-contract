@@ -35,7 +35,7 @@ interface TokenManager {
     function LOG_MAX_UINT256() external view returns (uint256);
     function MAXIMUM_BEP20_SYMBOL_LEN() external view returns (uint8);
     function MAX_BEP2_TOTAL_SUPPLY() external view returns (uint256);
-    function MAX_GAS_FOR_TRANSFER_BNB() external view returns (uint256);
+    function MAX_GAS_FOR_TRANSFER_L2P() external view returns (uint256);
     function MINIMUM_BEP20_SYMBOL_LEN() external view returns (uint8);
     function MIRROR_CHANNELID() external view returns (uint8);
     function MIRROR_STATUS_ALREADY_BOUND() external view returns (uint8);

@@ -55,16 +55,16 @@ interface StakeHub {
     error InvalidValidator();
 
     event BlackListed(address indexed target);
-    event Claimed(address indexed operatorAddress, address indexed delegator, uint256 bnbAmount);
+    event Claimed(address indexed operatorAddress, address indexed delegator, uint256 l2pAmount);
     event CommissionRateEdited(address indexed operatorAddress, uint64 newCommissionRate);
     event ConsensusAddressEdited(address indexed operatorAddress, address indexed newConsensusAddress);
-    event Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount);
+    event Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event DescriptionEdited(address indexed operatorAddress);
     event Initialized(uint8 version);
     event MigrateFailed(
-        address indexed operatorAddress, address indexed delegator, uint256 bnbAmount, StakeMigrationRespCode respCode
+        address indexed operatorAddress, address indexed delegator, uint256 l2pAmount, StakeMigrationRespCode respCode
     );
-    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount);
+    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event ParamChange(string key, bytes value);
     event Paused();
     event ProtectorChanged(address indexed oldProtector, address indexed newProtector);
@@ -74,14 +74,14 @@ interface StakeHub {
         address indexed delegator,
         uint256 oldShares,
         uint256 newShares,
-        uint256 bnbAmount
+        uint256 l2pAmount
     );
     event Resumed();
     event RewardDistributeFailed(address indexed operatorAddress, bytes failReason);
     event RewardDistributed(address indexed operatorAddress, uint256 reward);
     event StakeCreditInitialized(address indexed operatorAddress, address indexed creditContract);
     event UnBlackListed(address indexed target);
-    event Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount);
+    event Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event UnexpectedPackage(uint8 channelId, bytes msgBytes);
     event ValidatorCreated(
         address indexed consensusAddress,
@@ -154,7 +154,7 @@ interface StakeHub {
             uint256 totalLength
         );
     function getValidatorRewardRecord(address operatorAddress, uint256 index) external view returns (uint256);
-    function getValidatorTotalPooledBNBRecord(address operatorAddress, uint256 index) external view returns (uint256);
+    function getValidatorTotalPooledL2PRecord(address operatorAddress, uint256 index) external view returns (uint256);
     function getValidatorVoteAddress(address operatorAddress) external view returns (bytes memory voteAddress);
     function getValidators(
         uint256 offset,
@@ -168,8 +168,8 @@ interface StakeHub {
     function maliciousVoteSlash(bytes memory voteAddress) external;
     function maxElectedValidators() external view returns (uint256);
     function maxFelonyBetweenBreatheBlock() external view returns (uint256);
-    function minDelegationBNBChange() external view returns (uint256);
-    function minSelfDelegationBNB() external view returns (uint256);
+    function minDelegationL2PChange() external view returns (uint256);
+    function minSelfDelegationL2P() external view returns (uint256);
     function numOfJailed() external view returns (uint256);
     function pause() external;
     function redelegate(address srcValidator, address dstValidator, uint256 shares, bool delegateVotePower) external;

@@ -30,7 +30,7 @@ interface TokenHub {
 
     function BC_FUSION_CHANNELID() external view returns (uint8);
     function BEP2_TOKEN_DECIMALS() external view returns (uint8);
-    function BEP2_TOKEN_SYMBOL_FOR_BNB() external view returns (bytes32);
+    function BEP2_TOKEN_SYMBOL_FOR_L2P() external view returns (bytes32);
     function BIND_CHANNELID() external view returns (uint8);
     function CODE_OK() external view returns (uint32);
     function CROSS_CHAIN_CONTRACT_ADDR() external view returns (address);
@@ -41,7 +41,7 @@ interface TokenHub {
     function GOV_HUB_ADDR() external view returns (address);
     function GOV_TOKEN_ADDR() external view returns (address);
     function INCENTIVIZE_ADDR() external view returns (address);
-    function INIT_BNB_LARGE_TRANSFER_LIMIT() external view returns (uint256);
+    function INIT_L2P_LARGE_TRANSFER_LIMIT() external view returns (uint256);
     function INIT_LOCK_PERIOD() external view returns (uint256);
     function INIT_MINIMUM_RELAY_FEE() external view returns (uint256);
     function LIGHT_CLIENT_ADDR() external view returns (address);
@@ -49,7 +49,7 @@ interface TokenHub {
     function MAXIMUM_BEP20_SYMBOL_LEN() external view returns (uint8);
     function MAX_BEP2_TOTAL_SUPPLY() external view returns (uint256);
     function MAX_GAS_FOR_CALLING_BEP20() external view returns (uint256);
-    function MAX_GAS_FOR_TRANSFER_BNB() external view returns (uint256);
+    function MAX_GAS_FOR_TRANSFER_L2P() external view returns (uint256);
     function MINIMUM_BEP20_SYMBOL_LEN() external view returns (uint8);
     function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function REWARD_UPPER_LIMIT() external view returns (uint256);
@@ -75,7 +75,7 @@ interface TokenHub {
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
-    function batchTransferOutBNB(
+    function batchTransferOutL2P(
         address[] memory recipientAddrs,
         uint256[] memory amounts,
         address[] memory refundAddrs,
@@ -111,6 +111,6 @@ interface TokenHub {
     ) external payable returns (bool);
     function unbindToken(bytes32 bep2Symbol, address contractAddr) external;
     function updateParam(string memory key, bytes memory value) external;
-    function withdrawStakingBNB(uint256 amount) external returns (bool);
+    function withdrawStakingL2P(uint256 amount) external returns (bool);
     function withdrawUnlockedToken(address tokenAddress, address recipient) external;
 }

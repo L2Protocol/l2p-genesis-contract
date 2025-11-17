@@ -1,6 +1,6 @@
 # l2p-genesis-contracts
 
-This repo hold all the genesis contracts on BNB Smart chain. More details in [doc-site](https://docs.bnbchain.org/docs/learn/system-contract).
+This repo hold all the genesis contracts on L2 Protocol Chain. More details in [doc-site](https://docs.bnbchain.org/docs/learn/system-contract).
 
 ## Prepare
 
@@ -48,7 +48,7 @@ All system contracts will be flattened and output into `${workspace}/contracts/f
 
 ## How to generate genesis file
 
-1. Edit `init_holders.js` file to alloc the initial BNB holder.
+1. Edit `init_holders.js` file to alloc the initial L2P holder.
 2. Edit `validators.js` file to alloc the initial validator set.
 3. Edit system contracts setting as needed.
 4. Run `node scripts/generate-genesis.js` will generate genesis.json

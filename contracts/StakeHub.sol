@@ -98,8 +98,8 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     uint256 public transferGasLimit;
 
     // stake params
-    uint256 public minSelfDelegationBNB;
-    uint256 public minDelegationBNBChange;
+    uint256 public minSelfDelegationL2P;
+    uint256 public minDelegationL2PChange;
     uint256 public maxElectedValidators;
     uint256 public unbondPeriod;
     uint256 public redelegateFeeRate;
@@ -155,7 +155,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         address operatorAddress; // the operator address of the target validator to delegate to
         address delegator; // the beneficiary of the delegation
         address refundAddress; // the Beacon Chain address to refund the fund if migration failed
-        uint256 amount; // the amount of BNB to be migrated(decimal: 18)
+        uint256 amount; // the amount of L2P to be migrated(decimal: 18)
     }
 
     enum StakeMigrationRespCode {
@@ -212,15 +212,15 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     event CommissionRateEdited(address indexed operatorAddress, uint64 newCommissionRate);
     event DescriptionEdited(address indexed operatorAddress);
     event VoteAddressEdited(address indexed operatorAddress, bytes newVoteAddress);
-    event Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount);
-    event Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount);
+    event Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
+    event Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event Redelegated(
         address indexed srcValidator,
         address indexed dstValidator,
         address indexed delegator,
         uint256 oldShares,
         uint256 newShares,
-        uint256 bnbAmount
+        uint256 l2pAmount
     );
     event RewardDistributed(address indexed operatorAddress, uint256 reward);
     event RewardDistributeFailed(address indexed operatorAddress, bytes failReason);
@@ -230,16 +230,16 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     event ValidatorJailed(address indexed operatorAddress);
     event ValidatorEmptyJailed(address indexed operatorAddress);
     event ValidatorUnjailed(address indexed operatorAddress);
-    event Claimed(address indexed operatorAddress, address indexed delegator, uint256 bnbAmount);
+    event Claimed(address indexed operatorAddress, address indexed delegator, uint256 l2pAmount);
     event AgentChanged(address indexed operatorAddress, address indexed oldAgent, address indexed newAgent);
 
     // Events for adding and removing NodeIDs.
     event NodeIDAdded(address indexed validator, bytes32 nodeID);
     event NodeIDRemoved(address indexed validator, bytes32 nodeID);
 
-    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 bnbAmount); // @dev deprecated
+    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount); // @dev deprecated
     event MigrateFailed(
-        address indexed operatorAddress, address indexed delegator, uint256 bnbAmount, StakeMigrationRespCode respCode
+        address indexed operatorAddress, address indexed delegator, uint256 l2pAmount, StakeMigrationRespCode respCode
     ); // @dev deprecated
     event UnexpectedPackage(uint8 channelId, bytes msgBytes); // @dev deprecated
 
@@ -258,7 +258,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     receive() external payable {
-        // to prevent BNB from being lost
+        // to prevent L2P from being lost
         if (_receiveFundStatus != _ENABLE) revert();
     }
 
@@ -267,8 +267,8 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      */
     function initialize() external initializer onlyCoinbase onlyZeroGasPrice {
         transferGasLimit = 5000;
-        minSelfDelegationBNB = 2_000 ether;
-        minDelegationBNBChange = 1 ether;
+        minSelfDelegationL2P = 2_000 ether;
+        minDelegationL2PChange = 1 ether;
         maxElectedValidators = 45;
         unbondPeriod = 7 days;
         redelegateFeeRate = 2;
@@ -352,8 +352,8 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         bytes32 monikerHash = keccak256(abi.encodePacked(description.moniker));
         if (_monikerSet[monikerHash]) revert DuplicateMoniker();
 
-        uint256 delegation = msg.value - LOCK_AMOUNT; // create validator need to lock 1 BNB
-        if (delegation < minSelfDelegationBNB) revert SelfDelegationNotEnough();
+        uint256 delegation = msg.value - LOCK_AMOUNT; // create validator need to lock 1 L2P
+        if (delegation < minSelfDelegationL2P) revert SelfDelegationNotEnough();
 
         if (consensusAddress == address(0)) revert InvalidConsensusAddress();
         if (
@@ -486,7 +486,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         Validator storage valInfo = _validators[operatorAddress];
         if (!valInfo.jailed) revert ValidatorNotJailed();
 
-        if (IStakeCredit(valInfo.creditContract).getPooledBNB(operatorAddress) < minSelfDelegationBNB) {
+        if (IStakeCredit(valInfo.creditContract).getPooledL2P(operatorAddress) < minSelfDelegationL2P) {
             revert SelfDelegationNotEnough();
         }
         if (valInfo.jailUntil > block.timestamp) revert JailTimeNotExpired();
@@ -504,15 +504,15 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         address operatorAddress,
         bool delegateVotePower
     ) external payable whenNotPaused notInBlackList validatorExist(operatorAddress) {
-        uint256 bnbAmount = msg.value;
-        if (bnbAmount < minDelegationBNBChange) revert DelegationAmountTooSmall();
+        uint256 l2pAmount = msg.value;
+        if (l2pAmount < minDelegationL2PChange) revert DelegationAmountTooSmall();
 
         address delegator = msg.sender;
         Validator memory valInfo = _validators[operatorAddress];
         if (valInfo.jailed && delegator != operatorAddress) revert OnlySelfDelegation();
 
-        uint256 shares = IStakeCredit(valInfo.creditContract).delegate{ value: bnbAmount }(delegator);
-        emit Delegated(operatorAddress, delegator, shares, bnbAmount);
+        uint256 shares = IStakeCredit(valInfo.creditContract).delegate{ value: l2pAmount }(delegator);
+        emit Delegated(operatorAddress, delegator, shares, l2pAmount);
 
         IGovToken(GOV_TOKEN_ADDR).sync(valInfo.creditContract, delegator);
         if (delegateVotePower) {
@@ -521,7 +521,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     /**
-     * @dev Undelegate BNB from a validator, fund is only claimable few days later
+     * @dev Undelegate L2P from a validator, fund is only claimable few days later
      * @param operatorAddress the operator address of the validator to be undelegated from
      * @param shares the shares to be undelegated
      */
@@ -534,8 +534,8 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         address delegator = msg.sender;
         Validator memory valInfo = _validators[operatorAddress];
 
-        uint256 bnbAmount = IStakeCredit(valInfo.creditContract).undelegate(delegator, shares);
-        emit Undelegated(operatorAddress, delegator, shares, bnbAmount);
+        uint256 l2pAmount = IStakeCredit(valInfo.creditContract).undelegate(delegator, shares);
+        emit Undelegated(operatorAddress, delegator, shares, l2pAmount);
 
         if (delegator == operatorAddress) {
             _checkValidatorSelfDelegation(operatorAddress);
@@ -571,23 +571,23 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         Validator memory dstValInfo = _validators[dstValidator];
         if (dstValInfo.jailed && delegator != dstValidator) revert OnlySelfDelegation();
 
-        uint256 bnbAmount = IStakeCredit(srcValInfo.creditContract).unbond(delegator, shares);
-        if (bnbAmount < minDelegationBNBChange) revert DelegationAmountTooSmall();
+        uint256 l2pAmount = IStakeCredit(srcValInfo.creditContract).unbond(delegator, shares);
+        if (l2pAmount < minDelegationL2PChange) revert DelegationAmountTooSmall();
         // check if the srcValidator has enough self delegation
         if (
             delegator == srcValidator
-                && IStakeCredit(srcValInfo.creditContract).getPooledBNB(srcValidator) < minSelfDelegationBNB
+                && IStakeCredit(srcValInfo.creditContract).getPooledL2P(srcValidator) < minSelfDelegationL2P
         ) {
             revert SelfDelegationNotEnough();
         }
 
-        uint256 feeCharge = bnbAmount * redelegateFeeRate / REDELEGATE_FEE_RATE_BASE;
+        uint256 feeCharge = l2pAmount * redelegateFeeRate / REDELEGATE_FEE_RATE_BASE;
         (bool success,) = dstValInfo.creditContract.call{ value: feeCharge }("");
         if (!success) revert TransferFailed();
 
-        bnbAmount -= feeCharge;
-        uint256 newShares = IStakeCredit(dstValInfo.creditContract).delegate{ value: bnbAmount }(delegator);
-        emit Redelegated(srcValidator, dstValidator, delegator, shares, newShares, bnbAmount);
+        l2pAmount -= feeCharge;
+        uint256 newShares = IStakeCredit(dstValInfo.creditContract).delegate{ value: l2pAmount }(delegator);
+        emit Redelegated(srcValidator, dstValidator, delegator, shares, newShares, l2pAmount);
 
         address[] memory stakeCredits = new address[](2);
         stakeCredits[0] = srcValInfo.creditContract;
@@ -599,7 +599,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     /**
-     * @dev Claim the undelegated BNB from the pool after unbondPeriod
+     * @dev Claim the undelegated L2P from the pool after unbondPeriod
      * @param operatorAddress the operator address of the validator
      * @param requestNumber the request number of the undelegation. 0 means claim all
      */
@@ -608,7 +608,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     /**
-     * @dev Claim the undelegated BNB from the pools after unbondPeriod
+     * @dev Claim the undelegated L2P from the pools after unbondPeriod
      * @param operatorAddresses the operator addresses of the validator
      * @param requestNumbers numbers of the undelegation requests. 0 means claim all
      */
@@ -760,20 +760,20 @@ contract StakeHub is SystemV2, Initializable, Protectable {
             uint256 newTransferGasLimit = value.bytesToUint256(32);
             if (newTransferGasLimit < 2300 || newTransferGasLimit > 10_000) revert InvalidValue(key, value);
             transferGasLimit = newTransferGasLimit;
-        } else if (key.compareStrings("minSelfDelegationBNB")) {
+        } else if (key.compareStrings("minSelfDelegationL2P")) {
             if (value.length != 32) revert InvalidValue(key, value);
-            uint256 newMinSelfDelegationBNB = value.bytesToUint256(32);
-            if (newMinSelfDelegationBNB < 1000 ether || newMinSelfDelegationBNB > 100_000 ether) {
+            uint256 newMinSelfDelegationL2P = value.bytesToUint256(32);
+            if (newMinSelfDelegationL2P < 1000 ether || newMinSelfDelegationL2P > 100_000 ether) {
                 revert InvalidValue(key, value);
             }
-            minSelfDelegationBNB = newMinSelfDelegationBNB;
-        } else if (key.compareStrings("minDelegationBNBChange")) {
+            minSelfDelegationL2P = newMinSelfDelegationL2P;
+        } else if (key.compareStrings("minDelegationL2PChange")) {
             if (value.length != 32) revert InvalidValue(key, value);
-            uint256 newMinDelegationBNBChange = value.bytesToUint256(32);
-            if (newMinDelegationBNBChange < 0.1 ether || newMinDelegationBNBChange > 10 ether) {
+            uint256 newMinDelegationL2PChange = value.bytesToUint256(32);
+            if (newMinDelegationL2PChange < 0.1 ether || newMinDelegationL2PChange > 10 ether) {
                 revert InvalidValue(key, value);
             }
-            minDelegationBNBChange = newMinDelegationBNBChange;
+            minDelegationL2PChange = newMinDelegationL2PChange;
         } else if (key.compareStrings("maxElectedValidators")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newMaxElectedValidators = value.bytesToUint256(32);
@@ -852,11 +852,11 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      * @param operatorAddress the operator address of the validator
      * @param index the index of the day to query(timestamp / 1 days)
      *
-     * @return the validator's total pooled BNB of the day
+     * @return the validator's total pooled L2P of the day
      */
-    function getValidatorTotalPooledBNBRecord(address operatorAddress, uint256 index) external view returns (uint256) {
+    function getValidatorTotalPooledL2PRecord(address operatorAddress, uint256 index) external view returns (uint256) {
         if (!_validatorSet.contains(operatorAddress)) revert ValidatorNotExisted();
-        return IStakeCredit(_validators[operatorAddress].creditContract).totalPooledBNBRecord(index);
+        return IStakeCredit(_validators[operatorAddress].creditContract).totalPooledL2PRecord(index);
     }
 
     /**
@@ -1032,7 +1032,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
             address operatorAddress = _validatorSet.at(offset + i);
             Validator memory valInfo = _validators[operatorAddress];
             consensusAddrs[i] = valInfo.consensusAddress;
-            votingPowers[i] = valInfo.jailed ? 0 : IStakeCredit(valInfo.creditContract).totalPooledBNB();
+            votingPowers[i] = valInfo.jailed ? 0 : IStakeCredit(valInfo.creditContract).totalPooledL2P();
             voteAddrs[i] = valInfo.voteAddress;
         }
     }
@@ -1228,7 +1228,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         if (valInfo.jailed) {
             return;
         }
-        if (IStakeCredit(valInfo.creditContract).getPooledBNB(operatorAddress) < minSelfDelegationBNB) {
+        if (IStakeCredit(valInfo.creditContract).getPooledL2P(operatorAddress) < minSelfDelegationL2P) {
             _jailValidator(valInfo, block.timestamp + downtimeJailTime);
             IL2PValidatorSet(VALIDATOR_CONTRACT_ADDR).felony(valInfo.consensusAddress);
         }
@@ -1269,8 +1269,8 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     function _claim(address operatorAddress, uint256 requestNumber) internal validatorExist(operatorAddress) {
-        uint256 bnbAmount = IStakeCredit(_validators[operatorAddress].creditContract).claim(msg.sender, requestNumber);
-        emit Claimed(operatorAddress, msg.sender, bnbAmount);
+        uint256 l2pAmount = IStakeCredit(_validators[operatorAddress].creditContract).claim(msg.sender, requestNumber);
+        emit Claimed(operatorAddress, msg.sender, l2pAmount);
     }
 
     function _bep410MsgSender() internal view returns (address) {

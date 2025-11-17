@@ -251,7 +251,7 @@
     "name": "getSharesByPooledBNB",
     "inputs": [
       {
-        "name": "bnbAmount",
+        "name": "l2pAmount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -387,7 +387,7 @@
     "name": "slash",
     "inputs": [
       {
-        "name": "slashBnbAmount",
+        "name": "slashL2pAmount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -529,7 +529,7 @@
     ],
     "outputs": [
       {
-        "name": "bnbAmount",
+        "name": "l2pAmount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -563,7 +563,7 @@
             "internalType": "uint256"
           },
           {
-            "name": "bnbAmount",
+            "name": "l2pAmount",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -613,7 +613,7 @@
     ],
     "outputs": [
       {
-        "name": "bnbAmount",
+        "name": "l2pAmount",
         "type": "uint256",
         "internalType": "uint256"
       }

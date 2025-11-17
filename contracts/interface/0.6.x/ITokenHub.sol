@@ -22,14 +22,14 @@ interface ITokenHub {
     function cancelTokenRecoverLock(bytes32 tokenSymbol, address attacker) external;
 
     /* solium-disable-next-line */
-    function batchTransferOutBNB(
+    function batchTransferOutL2P(
         address[] calldata recipientAddrs,
         uint256[] calldata amounts,
         address[] calldata refundAddrs,
         uint64 expireTime
     ) external payable returns (bool);
 
-    function withdrawStakingBNB(uint256 amount) external returns (bool);
+    function withdrawStakingL2P(uint256 amount) external returns (bool);
 
     function cancelTransferIn(address tokenAddress, address attacker) external;
 }

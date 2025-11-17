@@ -37,11 +37,11 @@ contract L2PGovernor is
     uint256 private constant BLOCK_INTERVAL = 3 seconds; // TODO(Nathan): Only can be used to do initialize!
     uint256 private constant INIT_VOTING_DELAY = 0 hours / BLOCK_INTERVAL;
     uint256 private constant INIT_VOTING_PERIOD = 7 days / BLOCK_INTERVAL;
-    uint256 private constant INIT_PROPOSAL_THRESHOLD = 200 ether; //  = 200 BNB
+    uint256 private constant INIT_PROPOSAL_THRESHOLD = 200 ether; //  = 200 L2P
     uint256 private constant INIT_QUORUM_NUMERATOR = 10; // for >= 10%
 
-    // starting propose requires totalSupply of GovBNB >= 10000000 * 1e18
-    uint256 private constant PROPOSE_START_GOVBNB_SUPPLY_THRESHOLD = 10_000_000 ether;
+    // starting propose requires totalSupply of GovL2P >= 10000000 * 1e18
+    uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD = 10_000_000 ether;
     // ensures there is a minimum voting period (1 days) after quorum is reached
     uint64 private constant INIT_MIN_PERIOD_AFTER_QUORUM = uint64(1 days / BLOCK_INTERVAL);
 
@@ -271,7 +271,7 @@ contract L2PGovernor is
     /*----------------- internal functions -----------------*/
     function _checkAndStartPropose() internal {
         if (!proposeStarted) {
-            if (IGovToken(GOV_TOKEN_ADDR).totalSupply() < PROPOSE_START_GOVBNB_SUPPLY_THRESHOLD) {
+            if (IGovToken(GOV_TOKEN_ADDR).totalSupply() < PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD) {
                 revert TotalSupplyNotEnough();
             }
             proposeStarted = true;

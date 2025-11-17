@@ -20,7 +20,7 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
     // @notice signature: 0x2fe8dae9
     error ZeroTotalShares();
     // @notice signature: 0xf6ed9ce0
-    error ZeroTotalPooledBNB();
+    error ZeroTotalPooledL2P();
     // @notice signature: 0x8cd22d19
     error TransferNotAllowed();
     // @notice signature: 0x20287471
@@ -44,7 +44,7 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
 
     /*----------------- storage -----------------*/
     address public validator; // validator's operator address
-    uint256 public totalPooledBNB; // total reward plus total BNB staked in the pool
+    uint256 public totalPooledL2P; // total reward plus total L2P staked in the pool
 
     // hash of the unbond request => unbond request
     mapping(bytes32 => UnbondRequest) private _unbondRequests;
@@ -55,26 +55,26 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
 
     // day index => receivedReward
     mapping(uint256 => uint256) public rewardRecord;
-    // day index => totalPooledBNB
-    mapping(uint256 => uint256) public totalPooledBNBRecord;
+    // day index => totalPooledL2P
+    mapping(uint256 => uint256) public totalPooledL2PRecord;
 
     /*----------------- structs and events -----------------*/
     struct UnbondRequest {
         uint256 shares;
-        uint256 bnbAmount;
+        uint256 l2pAmount;
         uint256 unlockTime;
     }
 
     event RewardReceived(uint256 rewardToAll, uint256 commission);
 
     /**
-     * @notice only accept BNB from `StakeHub`
+     * @notice only accept L2P from `StakeHub`
      */
     receive() external payable onlyStakeHub {
         uint256 index = block.timestamp / IStakeHub(STAKE_HUB_ADDR).BREATHE_BLOCK_INTERVAL();
-        totalPooledBNBRecord[index] = totalPooledBNB;
+        totalPooledL2PRecord[index] = totalPooledL2P;
         rewardRecord[index] += msg.value;
-        totalPooledBNB += msg.value;
+        totalPooledL2P += msg.value;
     }
 
     /*----------------- init -----------------*/
@@ -109,16 +109,16 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
     /**
      * @param delegator the address of the delegator
      * @param shares the amount of shares to be undelegated
-     * @return bnbAmount the amount of BNB to be unlocked
+     * @return l2pAmount the amount of L2P to be unlocked
      */
-    function undelegate(address delegator, uint256 shares) external onlyStakeHub returns (uint256 bnbAmount) {
+    function undelegate(address delegator, uint256 shares) external onlyStakeHub returns (uint256 l2pAmount) {
         if (shares == 0) revert ZeroShares();
         if (shares > balanceOf(delegator)) revert InsufficientBalance();
 
         // add to the queue
-        bnbAmount = _burnAndSync(delegator, shares);
+        l2pAmount = _burnAndSync(delegator, shares);
         uint256 unlockTime = block.timestamp + IStakeHub(STAKE_HUB_ADDR).unbondPeriod();
-        UnbondRequest memory request = UnbondRequest({ shares: shares, bnbAmount: bnbAmount, unlockTime: unlockTime });
+        UnbondRequest memory request = UnbondRequest({ shares: shares, l2pAmount: l2pAmount, unlockTime: unlockTime });
         bytes32 hash = keccak256(abi.encodePacked(delegator, _useSequence(delegator)));
         // the hash should not exist in the queue
         // this will not happen in normal cases
@@ -131,22 +131,22 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
      * @dev Unbond immediately without adding to the queue. Only for redelegate process.
      * @param delegator the address of the delegator
      * @param shares the amount of shares to be undelegated
-     * @return bnbAmount the amount of BNB unlocked
+     * @return l2pAmount the amount of L2P unlocked
      */
-    function unbond(address delegator, uint256 shares) external onlyStakeHub returns (uint256 bnbAmount) {
+    function unbond(address delegator, uint256 shares) external onlyStakeHub returns (uint256 l2pAmount) {
         if (shares == 0) revert ZeroShares();
         if (shares > balanceOf(delegator)) revert InsufficientBalance();
 
-        bnbAmount = _burnAndSync(delegator, shares);
+        l2pAmount = _burnAndSync(delegator, shares);
 
-        (bool success,) = STAKE_HUB_ADDR.call{ value: bnbAmount }("");
+        (bool success,) = STAKE_HUB_ADDR.call{ value: l2pAmount }("");
         if (!success) revert TransferFailed();
     }
 
     /**
      * @param delegator the address of the delegator
      * @param number the number of unbond requests to be claimed. 0 means claim all
-     * @return _totalBnbAmount the total amount of BNB claimed
+     * @return _totalL2pAmount the total amount of L2P claimed
      */
     function claim(address payable delegator, uint256 number) external onlyStakeHub nonReentrant returns (uint256) {
         // number == 0 means claim all
@@ -156,7 +156,7 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
             ? _unbondRequestsQueue[delegator].length()
             : number;
 
-        uint256 _totalBnbAmount;
+        uint256 _totalL2pAmount;
         while (number != 0) {
             bytes32 hash = _unbondRequestsQueue[delegator].front();
             UnbondRequest memory request = _unbondRequests[hash];
@@ -167,16 +167,16 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
             // remove from the queue
             _unbondRequestsQueue[delegator].popFront();
 
-            _totalBnbAmount += request.bnbAmount;
+            _totalL2pAmount += request.l2pAmount;
             --number;
         }
-        if (_totalBnbAmount == 0) revert NoClaimableUnbondRequest();
+        if (_totalL2pAmount == 0) revert NoClaimableUnbondRequest();
 
         uint256 _gasLimit = IStakeHub(STAKE_HUB_ADDR).transferGasLimit();
-        (bool success,) = delegator.call{ gas: _gasLimit, value: _totalBnbAmount }("");
+        (bool success,) = delegator.call{ gas: _gasLimit, value: _totalL2pAmount }("");
         if (!success) revert TransferFailed();
 
-        return _totalBnbAmount;
+        return _totalL2pAmount;
     }
 
     /**
@@ -186,14 +186,14 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
     function distributeReward(
         uint64 commissionRate
     ) external payable onlyStakeHub {
-        uint256 bnbAmount = msg.value;
-        uint256 _commission = (bnbAmount * uint256(commissionRate)) / COMMISSION_RATE_BASE;
-        uint256 _reward = bnbAmount - _commission;
+        uint256 l2pAmount = msg.value;
+        uint256 _commission = (l2pAmount * uint256(commissionRate)) / COMMISSION_RATE_BASE;
+        uint256 _reward = l2pAmount - _commission;
 
         uint256 index = block.timestamp / IStakeHub(STAKE_HUB_ADDR).BREATHE_BLOCK_INTERVAL();
-        totalPooledBNBRecord[index] = totalPooledBNB;
+        totalPooledL2PRecord[index] = totalPooledL2P;
         rewardRecord[index] += _reward;
-        totalPooledBNB += _reward;
+        totalPooledL2P += _reward;
 
         // mint commission to the validator
         _mintAndSync(validator, _commission);
@@ -203,43 +203,43 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
 
     /**
      * @dev Slash the validator. Only the `StakeHub` contract can call this function.
-     * @param slashBnbAmount the amount of BNB to be slashed
-     * @return realSlashBnbAmount the real amount of BNB slashed
+     * @param slashL2pAmount the amount of L2P to be slashed
+     * @return realSlashL2pAmount the real amount of L2P slashed
      */
     function slash(
-        uint256 slashBnbAmount
+        uint256 slashL2pAmount
     ) external onlyStakeHub returns (uint256) {
         uint256 selfDelegation = balanceOf(validator);
-        uint256 slashShares = getSharesByPooledBNB(slashBnbAmount);
+        uint256 slashShares = getSharesByPooledL2P(slashL2pAmount);
 
         slashShares = slashShares > selfDelegation ? selfDelegation : slashShares;
-        uint256 realSlashBnbAmount = _burnAndSync(validator, slashShares);
+        uint256 realSlashL2pAmount = _burnAndSync(validator, slashShares);
 
-        (bool success,) = SYSTEM_REWARD_ADDR.call{ value: realSlashBnbAmount }("");
+        (bool success,) = SYSTEM_REWARD_ADDR.call{ value: realSlashL2pAmount }("");
         if (!success) revert TransferFailed();
 
-        return realSlashBnbAmount;
+        return realSlashL2pAmount;
     }
 
     /*----------------- view functions -----------------*/
     /**
-     * @return the amount of shares that corresponds to `_bnbAmount` protocol-controlled BNB.
+     * @return the amount of shares that corresponds to `_l2pAmount` protocol-controlled L2P.
      */
-    function getSharesByPooledBNB(
-        uint256 bnbAmount
+    function getSharesByPooledL2P(
+        uint256 l2pAmount
     ) public view returns (uint256) {
-        if (totalPooledBNB == 0) revert ZeroTotalPooledBNB();
-        return (bnbAmount * totalSupply()) / totalPooledBNB;
+        if (totalPooledL2P == 0) revert ZeroTotalPooledL2P();
+        return (l2pAmount * totalSupply()) / totalPooledL2P;
     }
 
     /**
-     * @return the amount of BNB that corresponds to `_sharesAmount` token shares.
+     * @return the amount of L2P that corresponds to `_sharesAmount` token shares.
      */
-    function getPooledBNBByShares(
+    function getPooledL2PByShares(
         uint256 shares
     ) public view returns (uint256) {
         if (totalSupply() == 0) revert ZeroTotalShares();
-        return (shares * totalPooledBNB) / totalSupply();
+        return (shares * totalPooledL2P) / totalSupply();
     }
 
     /**
@@ -280,9 +280,9 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
     }
 
     /**
-     * @return the sum of first `number` requests' BNB locked in delegator's unbond queue.
+     * @return the sum of first `number` requests' L2P locked in delegator's unbond queue.
      */
-    function lockedBNBs(address delegator, uint256 number) public view returns (uint256) {
+    function lockedL2Ps(address delegator, uint256 number) public view returns (uint256) {
         // number == 0 means all
         // number should not exceed the length of the queue
         if (_unbondRequestsQueue[delegator].length() == 0) {
@@ -292,13 +292,13 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
             ? _unbondRequestsQueue[delegator].length()
             : number;
 
-        uint256 _totalBnbAmount;
+        uint256 _totalL2pAmount;
         for (uint256 i; i < number; ++i) {
             bytes32 hash = _unbondRequestsQueue[delegator].at(i);
             UnbondRequest memory request = _unbondRequests[hash];
-            _totalBnbAmount += request.bnbAmount;
+            _totalL2pAmount += request.l2pAmount;
         }
-        return _totalBnbAmount;
+        return _totalL2pAmount;
     }
 
     /**
@@ -311,12 +311,12 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
     }
 
     /**
-     * @return the total amount of BNB staked and reward of the delegator.
+     * @return the total amount of L2P staked and reward of the delegator.
      */
-    function getPooledBNB(
+    function getPooledL2P(
         address account
     ) public view returns (uint256) {
-        return getPooledBNBByShares(balanceOf(account));
+        return getPooledL2PByShares(balanceOf(account));
     }
 
     /*----------------- internal functions -----------------*/
@@ -328,26 +328,26 @@ contract StakeCredit is SystemV2, Initializable, ReentrancyGuardUpgradeable, ERC
         if (initAmount <= toLock || validator == address(0) || totalSupply() != 0) revert WrongInitContext();
 
         // mint initial tokens to the validator and lock some of them
-        // shares is equal to the amount of BNB staked
+        // shares is equal to the amount of L2P staked
         address deadAddress = IStakeHub(STAKE_HUB_ADDR).DEAD_ADDRESS();
         _mint(deadAddress, toLock);
         uint256 initShares = initAmount - toLock;
         _mint(validator, initShares);
 
-        totalPooledBNB = initAmount;
+        totalPooledL2P = initAmount;
     }
 
-    function _mintAndSync(address account, uint256 bnbAmount) internal returns (uint256 shares) {
+    function _mintAndSync(address account, uint256 l2pAmount) internal returns (uint256 shares) {
         // shares here could be zero
-        shares = getSharesByPooledBNB(bnbAmount);
+        shares = getSharesByPooledL2P(l2pAmount);
         _mint(account, shares);
-        totalPooledBNB += bnbAmount;
+        totalPooledL2P += l2pAmount;
     }
 
-    function _burnAndSync(address account, uint256 shares) internal returns (uint256 bnbAmount) {
-        bnbAmount = getPooledBNBByShares(shares);
+    function _burnAndSync(address account, uint256 shares) internal returns (uint256 l2pAmount) {
+        l2pAmount = getPooledL2PByShares(shares);
         _burn(account, shares);
-        totalPooledBNB -= bnbAmount;
+        totalPooledL2P -= l2pAmount;
     }
 
     function _useSequence(

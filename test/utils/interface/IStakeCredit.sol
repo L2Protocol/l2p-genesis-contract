@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 interface StakeCredit {
     struct UnbondRequest {
         uint256 shares;
-        uint256 bnbAmount;
+        uint256 l2pAmount;
         uint256 unlockTime;
     }
 
@@ -25,7 +25,7 @@ interface StakeCredit {
     error WrongInitContext();
     error ZeroAmount();
     error ZeroShares();
-    error ZeroTotalPooledBNB();
+    error ZeroTotalPooledL2P();
     error ZeroTotalShares();
 
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -47,25 +47,25 @@ interface StakeCredit {
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
     function delegate(address delegator) external payable returns (uint256 shares);
     function distributeReward(uint64 commissionRate) external payable;
-    function getPooledBNB(address account) external view returns (uint256);
-    function getPooledBNBByShares(uint256 shares) external view returns (uint256);
-    function getSharesByPooledBNB(uint256 bnbAmount) external view returns (uint256);
+    function getPooledL2P(address account) external view returns (uint256);
+    function getPooledL2PByShares(uint256 shares) external view returns (uint256);
+    function getSharesByPooledL2P(uint256 l2pAmount) external view returns (uint256);
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     function initialize(address _validator, string memory _moniker) external payable;
-    function lockedBNBs(address delegator, uint256 number) external view returns (uint256);
+    function lockedL2Ps(address delegator, uint256 number) external view returns (uint256);
     function name() external view returns (string memory);
     function pendingUnbondRequest(address delegator) external view returns (uint256);
     function rewardRecord(uint256) external view returns (uint256);
-    function slash(uint256 slashBnbAmount) external returns (uint256);
+    function slash(uint256 slashL2pAmount) external returns (uint256);
     function symbol() external view returns (string memory);
-    function totalPooledBNB() external view returns (uint256);
-    function totalPooledBNBRecord(uint256) external view returns (uint256);
+    function totalPooledL2P() external view returns (uint256);
+    function totalPooledL2PRecord(uint256) external view returns (uint256);
     function totalSupply() external view returns (uint256);
     function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
-    function unbond(address delegator, uint256 shares) external returns (uint256 bnbAmount);
+    function unbond(address delegator, uint256 shares) external returns (uint256 l2pAmount);
     function unbondRequest(address delegator, uint256 _index) external view returns (UnbondRequest memory);
     function unbondSequence(address delegator) external view returns (uint256);
-    function undelegate(address delegator, uint256 shares) external returns (uint256 bnbAmount);
+    function undelegate(address delegator, uint256 shares) external returns (uint256 l2pAmount);
     function validator() external view returns (address);
 }
