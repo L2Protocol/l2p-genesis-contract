@@ -42,7 +42,6 @@ Promise.all([
   readByteCode('systemRewardContract', 'out/SystemReward.sol/SystemReward.json'),
   readByteCode('slashContract', 'out/SlashIndicator.sol/SlashIndicator.json'),
   readByteCode('govHub', 'out/GovHub.sol/GovHub.json'),
-  readByteCode('staking', 'out/Staking.sol/Staking.json'),
   readByteCode('stakeHub', 'out/StakeHub.sol/StakeHub.json'),
   readByteCode('stakeCredit', 'out/StakeCredit.sol/StakeCredit.json'),
   readByteCode('governor', 'out/L2PGovernor.sol/L2PGovernor.json'),
