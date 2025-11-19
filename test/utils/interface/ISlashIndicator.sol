@@ -60,9 +60,6 @@ interface SlashIndicator {
     function felonyThreshold() external view returns (uint256);
     function getSlashIndicator(address validator) external view returns (uint256, uint256);
     function getSlashThresholds() external view returns (uint256, uint256);
-    function handleAckPackage(uint8, bytes memory msgBytes) external;
-    function handleFailAckPackage(uint8, bytes memory) external;
-    function handleSynPackage(uint8, bytes memory) external returns (bytes memory);
     function indicators(address) external view returns (uint256 height, uint256 count, bool exist);
     function init() external;
     function misdemeanorThreshold() external view returns (uint256);

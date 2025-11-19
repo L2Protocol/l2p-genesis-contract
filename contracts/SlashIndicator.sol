@@ -7,14 +7,13 @@ import "./lib/0.6.x/TypesToBytes.sol";
 import "./lib/0.6.x/BytesLib.sol";
 import "./lib/0.6.x/Memory.sol";
 import "./interface/0.6.x/ISlashIndicator.sol";
-import "./interface/0.6.x/IApplication.sol";
 import "./interface/0.6.x/IL2PValidatorSet.sol";
 import "./interface/0.6.x/IParamSubscriber.sol";
 import "./interface/0.6.x/ISystemReward.sol";
 import "./interface/0.6.x/IStakeHub.sol";
 import "./lib/0.6.x/RLPEncode.sol";
 
-contract SlashIndicator is ISlashIndicator, System, IParamSubscriber, IApplication {
+contract SlashIndicator is ISlashIndicator, System, IParamSubscriber {
     using RLPEncode for *;
 
     uint256 public constant MISDEMEANOR_THRESHOLD = 50;

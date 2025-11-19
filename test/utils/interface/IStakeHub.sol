@@ -160,9 +160,6 @@ interface StakeHub {
         uint256 offset,
         uint256 limit
     ) external view returns (address[] memory operatorAddrs, address[] memory creditAddrs, uint256 totalLength);
-    function handleAckPackage(uint8 channelId, bytes memory msgBytes) external;
-    function handleFailAckPackage(uint8 channelId, bytes memory msgBytes) external;
-    function handleSynPackage(uint8, bytes memory msgBytes) external returns (bytes memory);
     function initialize() external;
     function isPaused() external view returns (bool);
     function maliciousVoteSlash(bytes memory voteAddress) external;

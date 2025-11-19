@@ -2,9 +2,8 @@ pragma solidity 0.6.4;
 
 import "./System.sol";
 import "./interface/0.6.x/IParamSubscriber.sol";
-import "./interface/0.6.x/IApplication.sol";
 
-contract GovHub is System, IApplication {
+contract GovHub is System {
     uint32 public constant ERROR_TARGET_NOT_CONTRACT = 101;
     uint32 public constant ERROR_TARGET_CONTRACT_FAIL = 102;
 

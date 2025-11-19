@@ -98,9 +98,6 @@ interface L2PValidatorSet {
     function getTurnLength() external view returns (uint256);
     function getValidators() external view returns (address[] memory);
     function getWorkingValidatorCount() external view returns (uint256 workingValidatorCount);
-    function handleAckPackage(uint8 channelId, bytes memory msgBytes) external;
-    function handleFailAckPackage(uint8 channelId, bytes memory msgBytes) external;
-    function handleSynPackage(uint8, bytes memory msgBytes) external returns (bytes memory responsePayload);
     function init() external;
     function systemRewardBaseRatio() external view returns (uint256);
     function isCurrentValidator(address validator) external view returns (bool);

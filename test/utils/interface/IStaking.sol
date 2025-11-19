@@ -82,9 +82,6 @@ interface Staking {
     function getRequestInFly(address delegator) external view returns (uint256[3] memory);
     function getTotalDelegated(address delegator) external view returns (uint256);
     function getUndelegated(address delegator) external view returns (uint256);
-    function handleAckPackage(uint8, bytes memory msgBytes) external;
-    function handleFailAckPackage(uint8, bytes memory msgBytes) external;
-    function handleSynPackage(uint8, bytes memory msgBytes) external returns (bytes memory);
     function minDelegation() external view returns (uint256);
     function redelegate(address, address, uint256) external payable;
     function relayerFee() external view returns (uint256);
