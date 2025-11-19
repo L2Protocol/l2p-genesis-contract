@@ -18,21 +18,6 @@ contract GovHubTest is Deployer {
         _updateParamByGovHub(key, valueBytes, address(l2pValidatorSet));
     }
 
-    function testGovIncentivize(uint256 value1, uint256 value2, uint256 value3) public {
-        uint256 denominator = incentivize.headerRelayerRewardRateDenominator();
-        vm.assume(value1 <= denominator);
-        vm.assume(value2 >= value1);
-        vm.assume(value2 > 0);
-        vm.assume(value3 > 0);
-        vm.assume(value3 >= value1);
-
-        bytes memory key = "headerRelayerRewardRateMolecule";
-        bytes memory valueBytes = abi.encode(value1);
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(incentivize));
-    }
-
     function testGovSlash(uint16 value1, uint16 value2) public {
         uint256 misdemeanorThreshold = slashIndicator.misdemeanorThreshold();
         vm.assume(uint256(value1) > misdemeanorThreshold);
