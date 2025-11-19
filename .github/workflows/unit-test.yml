@@ -50,7 +50,7 @@ jobs:
       - name: Start Local Chain
         run: |
           npm install pm2 -g
-          pm2 start --name local-chain "anvil -f https://l2p-dataseed.l2protocol.com"
+          pm2 start --name local-chain "anvil"
           sleep 5
         env:
           PORT: 8545
