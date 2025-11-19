@@ -48,7 +48,6 @@ interface Staking {
     function SLASH_CONTRACT_ADDR() external view returns (address);
     function STAKE_CREDIT_ADDR() external view returns (address);
     function STAKE_HUB_ADDR() external view returns (address);
-    function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TEN_DECIMALS() external view returns (uint256);
     function TIMELOCK_ADDR() external view returns (address);

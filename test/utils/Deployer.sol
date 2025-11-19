@@ -23,7 +23,6 @@ contract Deployer is Test {
     address public constant SLASH_CONTRACT_ADDR = payable(0x0000000000000000000000000000000000001001);
     address payable public constant SYSTEM_REWARD_ADDR = payable(0x0000000000000000000000000000000000001002);
     address public constant GOV_HUB_ADDR = payable(0x0000000000000000000000000000000000001007);
-    address payable public constant STAKING_CONTRACT_ADDR = payable(0x0000000000000000000000000000000000002001);
     address payable public constant STAKE_HUB_ADDR = payable(0x0000000000000000000000000000000000002002);
     address payable public constant STAKE_CREDIT_ADDR = payable(0x0000000000000000000000000000000000002003);
     address payable public constant GOVERNOR_ADDR = payable(0x0000000000000000000000000000000000002004);
@@ -34,7 +33,6 @@ contract Deployer is Test {
     SlashIndicator public slashIndicator;
     SystemReward public systemReward;
     GovHub public govHub;
-    Staking public staking;
     StakeHub public stakeHub;
     StakeCredit public stakeCredit;
     L2PGovernor public governor;
@@ -61,8 +59,6 @@ contract Deployer is Test {
         vm.label(address(systemReward), "SystemReward");
         govHub = GovHub(GOV_HUB_ADDR);
         vm.label(address(govHub), "GovHub");
-        staking = Staking(STAKING_CONTRACT_ADDR);
-        vm.label(address(staking), "Staking");
         stakeHub = StakeHub(STAKE_HUB_ADDR);
         vm.label(address(stakeHub), "StakeHub");
         stakeCredit = StakeCredit(STAKE_CREDIT_ADDR);

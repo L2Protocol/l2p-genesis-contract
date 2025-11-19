@@ -42,7 +42,6 @@ interface L2PValidatorSet {
     function SLASH_CONTRACT_ADDR() external view returns (address);
     function STAKE_CREDIT_ADDR() external view returns (address);
     function STAKE_HUB_ADDR() external view returns (address);
-    function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
     function VALIDATORS_UPDATE_MESSAGE_TYPE() external view returns (uint8);
