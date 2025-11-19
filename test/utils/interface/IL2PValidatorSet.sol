@@ -91,7 +91,6 @@ interface L2PValidatorSet {
     function numOfMaintaining() external view returns (uint256);
     function previousHeight() external view returns (uint256);
     function previousVoteAddrFullSet(uint256) external view returns (bytes memory);
-    function removeTmpMigratedValidator(address validator) external;
     function totalInComing() external view returns (uint256);
     function turnLength() external view returns (uint256);
     function updateParam(string memory key, bytes memory value) external;

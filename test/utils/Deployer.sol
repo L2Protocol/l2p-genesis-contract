@@ -79,8 +79,6 @@ contract Deployer is Test {
         vm.etch(SYSTEM_REWARD_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("GovHub.sol:GovHub");
         vm.etch(GOV_HUB_ADDR, deployedCode);
-        deployedCode = vm.getDeployedCode("Staking.sol:Staking");
-        vm.etch(STAKING_CONTRACT_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("StakeHub.sol:StakeHub");
         vm.etch(STAKE_HUB_ADDR, deployedCode);
         deployedCode = vm.getDeployedCode("StakeCredit.sol:StakeCredit");

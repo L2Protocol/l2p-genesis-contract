@@ -505,10 +505,6 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         }
     }
 
-    function removeTmpMigratedValidator(address validator) external onlyStakeHub {
-        revert("deprecated");
-    }
-
     /*----------------- For Temporary Maintenance -----------------*/
     /**
      * @notice Return whether the validator at index could enter maintenance
