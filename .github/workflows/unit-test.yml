@@ -50,7 +50,7 @@ jobs:
       - name: Start Local Chain
         run: |
           npm install pm2 -g
-          pm2 start --name local-chain "anvil"
+          pm2 start --name local-chain "anvil --chain-id 56"
           sleep 5
         env:
           PORT: 8545
