@@ -102,12 +102,10 @@ interface StakeHub {
 
     receive() external payable;
 
-    function BC_FUSION_CHANNELID() external view returns (uint8);
     function BREATHE_BLOCK_INTERVAL() external view returns (uint256);
     function DEAD_ADDRESS() external view returns (address);
     function LOCK_AMOUNT() external view returns (uint256);
     function REDELEGATE_FEE_RATE_BASE() external view returns (uint256);
-    function STAKING_CHANNELID() external view returns (uint8);
     function addToBlackList(address account) external;
     function blackList(address) external view returns (bool);
     function claim(address operatorAddress, uint256 requestNumber) external;

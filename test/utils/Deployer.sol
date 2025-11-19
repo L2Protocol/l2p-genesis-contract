@@ -30,17 +30,6 @@ contract Deployer is Test {
     address public constant GOV_TOKEN_ADDR = payable(0x0000000000000000000000000000000000002005);
     address payable public constant TIMELOCK_ADDR = payable(0x0000000000000000000000000000000000002006);
 
-    uint8 public constant BIND_CHANNELID = 0x01;
-    uint8 public constant TRANSFER_IN_CHANNELID = 0x02;
-    uint8 public constant TRANSFER_OUT_CHANNELID = 0x03;
-    uint8 public constant MIRROR_CHANNELID = 0x04;
-    uint8 public constant SYNC_CHANNELID = 0x05;
-    uint8 public constant STAKING_CHANNELID = 0x08;
-    uint8 public constant GOV_CHANNELID = 0x09;
-    uint8 public constant SLASH_CHANNELID = 0x0b;
-    uint8 public constant CROSS_STAKE_CHANNELID = 0x10;
-    uint8 public constant BC_FUSION_CHANNELID = 0x11;
-
     L2PValidatorSet public l2pValidatorSet;
     SlashIndicator public slashIndicator;
     SystemReward public systemReward;

@@ -36,8 +36,6 @@ interface StakeCredit {
 
     receive() external payable;
 
-    function BC_FUSION_CHANNELID() external view returns (uint8);
-    function STAKING_CHANNELID() external view returns (uint8);
     function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);

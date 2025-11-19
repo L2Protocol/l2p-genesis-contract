@@ -61,11 +61,9 @@ interface L2PGovernor {
     receive() external payable;
 
     function BALLOT_TYPEHASH() external view returns (bytes32);
-    function BC_FUSION_CHANNELID() external view returns (uint8);
     function CLOCK_MODE() external view returns (string memory);
     function COUNTING_MODE() external pure returns (string memory);
     function EXTENDED_BALLOT_TYPEHASH() external view returns (bytes32);
-    function STAKING_CHANNELID() external view returns (uint8);
     function addToBlackList(address account) external;
     function blackList(address) external view returns (bool);
     function cancel(uint256 proposalId) external;

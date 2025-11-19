@@ -29,13 +29,9 @@ interface Staking {
 
     receive() external payable;
 
-    function BC_FUSION_CHANNELID() external view returns (uint8);
-    function BIND_CHANNELID() external view returns (uint8);
     function CODE_FAILED() external view returns (uint8);
     function CODE_OK() external view returns (uint32);
     function CODE_SUCCESS() external view returns (uint8);
-    function CROSS_STAKE_CHANNELID() external view returns (uint8);
-    function ERROR_FAIL_DECODE() external view returns (uint32);
     function ERROR_WITHDRAW_L2P() external view returns (uint32);
     function EVENT_DELEGATE() external view returns (uint8);
     function EVENT_DISTRIBUTE_REWARD() external view returns (uint8);
@@ -43,7 +39,6 @@ interface Staking {
     function EVENT_REDELEGATE() external view returns (uint8);
     function EVENT_UNDELEGATE() external view returns (uint8);
     function GOVERNOR_ADDR() external view returns (address);
-    function GOV_CHANNELID() external view returns (uint8);
     function GOV_HUB_ADDR() external view returns (address);
     function GOV_TOKEN_ADDR() external view returns (address);
     function INIT_L2P_RELAYER_FEE() external view returns (uint256);
@@ -51,17 +46,13 @@ interface Staking {
     function INIT_RELAYER_FEE() external view returns (uint256);
     function INIT_TRANSFER_GAS() external view returns (uint256);
     function LOCK_TIME() external view returns (uint256);
-    function SLASH_CHANNELID() external view returns (uint8);
     function SLASH_CONTRACT_ADDR() external view returns (address);
     function STAKE_CREDIT_ADDR() external view returns (address);
     function STAKE_HUB_ADDR() external view returns (address);
-    function STAKING_CHANNELID() external view returns (uint8);
     function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TEN_DECIMALS() external view returns (uint256);
     function TIMELOCK_ADDR() external view returns (address);
-    function TRANSFER_IN_CHANNELID() external view returns (uint8);
-    function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATOR_CONTRACT_ADDR() external view returns (address);
     function alreadyInit() external view returns (bool);
     function l2pRelayerFee() external view returns (uint256);
