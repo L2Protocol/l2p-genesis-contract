@@ -199,11 +199,6 @@ def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
             contract, r"currentValidatorSet\.push\(validatorSetPkg.validatorSet\[i\]\);",
             "\t\t\tvalidatorExtraSet[i].voteAddress=validatorSetPkg.voteAddrs[i];"
         )
-        replace(
-            contract,
-            r"handleSynPackage\(\s*uint8,\s*bytes calldata msgBytes\s*\) external override onlyInit onlyCrossChainContract initValidatorExtraSet",
-            "handleSynPackage(uint8, bytes calldata msgBytes) external override onlyInit initValidatorExtraSet"
-        )
 
 
 def generate_gov_hub():
@@ -211,13 +206,6 @@ def generate_gov_hub():
     backup_file(
         os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
     )
-
-    if network == "dev":
-        replace(
-            contract,
-            r"handleSynPackage\(\s*uint8,\s*bytes calldata msgBytes\s*\) external override onlyCrossChainContract",
-            "handleSynPackage(uint8, bytes calldata msgBytes) external override"
-        )
 
 
 def generate_genesis(output="./genesis.json"):

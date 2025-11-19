@@ -6,11 +6,7 @@ contract SystemV2 {
     address internal constant VALIDATOR_CONTRACT_ADDR = 0x0000000000000000000000000000000000001000;
     address internal constant SLASH_CONTRACT_ADDR = 0x0000000000000000000000000000000000001001;
     address internal constant SYSTEM_REWARD_ADDR = 0x0000000000000000000000000000000000001002;
-    address internal constant INCENTIVIZE_ADDR = 0x0000000000000000000000000000000000001005;
-    address internal constant RELAYERHUB_CONTRACT_ADDR = 0x0000000000000000000000000000000000001006;
     address internal constant GOV_HUB_ADDR = 0x0000000000000000000000000000000000001007;
-    address internal constant TOKEN_MANAGER_ADDR = 0x0000000000000000000000000000000000001008;
-    address internal constant CROSS_CHAIN_CONTRACT_ADDR = 0x0000000000000000000000000000000000002000;
     address internal constant STAKING_CONTRACT_ADDR = 0x0000000000000000000000000000000000002001;
     address internal constant STAKE_HUB_ADDR = 0x0000000000000000000000000000000000002002;
     address internal constant STAKE_CREDIT_ADDR = 0x0000000000000000000000000000000000002003;
@@ -41,11 +37,6 @@ contract SystemV2 {
 
     modifier onlyZeroGasPrice() {
         if (tx.gasprice != 0) revert OnlyZeroGasPrice();
-        _;
-    }
-
-    modifier onlyCrossChainContract() {
-        if (msg.sender != CROSS_CHAIN_CONTRACT_ADDR) revert OnlySystemContract(CROSS_CHAIN_CONTRACT_ADDR);
         _;
     }
 

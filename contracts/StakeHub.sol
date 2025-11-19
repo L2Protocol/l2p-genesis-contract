@@ -281,22 +281,6 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         __Protectable_init_unchained(0x08E68Ec70FA3b629784fDB28887e206ce8561E08);
     }
 
-    /*----------------- Implement cross chain app -----------------*/
-    function handleSynPackage(
-        uint8,
-        bytes calldata msgBytes
-    ) external onlyCrossChainContract whenNotPaused enableReceivingFund returns (bytes memory) {
-        revert("deprecated");
-    }
-
-    function handleAckPackage(uint8 channelId, bytes calldata msgBytes) external onlyCrossChainContract {
-        revert("deprecated");
-    }
-
-    function handleFailAckPackage(uint8 channelId, bytes calldata msgBytes) external onlyCrossChainContract {
-        revert("deprecated");
-    }
-
     /*----------------- external functions -----------------*/
     /**
      * @param newAgent the new agent address of the validator, updating to address(0) means remove the old agent.

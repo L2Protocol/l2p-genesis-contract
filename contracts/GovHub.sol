@@ -18,23 +18,6 @@ contract GovHub is System, IApplication {
         address target;
     }
 
-    function handleSynPackage(
-        uint8,
-        bytes calldata msgBytes
-    ) external override onlyCrossChainContract returns (bytes memory responsePayload) {
-        revert("deprecated");
-    }
-
-    // should not happen
-    function handleAckPackage(uint8, bytes calldata) external override onlyCrossChainContract {
-        revert("deprecated");
-    }
-
-    // should not happen
-    function handleFailAckPackage(uint8, bytes calldata) external override onlyCrossChainContract {
-        revert("deprecated");
-    }
-
     function updateParam(string calldata key, bytes calldata value, address target) external onlyGovernorTimelock {
         ParamChangePackage memory proposal = ParamChangePackage(key, value, target);
         notifyUpdates(proposal);

@@ -86,22 +86,6 @@ contract SlashIndicator is ISlashIndicator, System, IParamSubscriber, IApplicati
         alreadyInit = true;
     }
 
-    /*----------------- Implement cross chain app -----------------*/
-    function handleSynPackage(
-        uint8,
-        bytes calldata
-    ) external override onlyCrossChainContract onlyInit returns (bytes memory) {
-        revert("deprecated");
-    }
-
-    function handleAckPackage(uint8, bytes calldata msgBytes) external override onlyCrossChainContract onlyInit {
-        revert("deprecated");
-    }
-
-    function handleFailAckPackage(uint8, bytes calldata) external override onlyCrossChainContract onlyInit {
-        revert("deprecated");
-    }
-
     /*----------------- External func -----------------*/
     /**
      * @dev Slash the validator who should have produced the current block

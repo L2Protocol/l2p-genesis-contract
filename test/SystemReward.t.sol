@@ -17,7 +17,6 @@ contract SystemRewardTest is Deployer {
     }
 
     function testOperator() public {
-        assertTrue(systemReward.isOperator(INCENTIVIZE_ADDR), "relayer incentivize should be operator");
         assertTrue(!systemReward.isOperator(_getNextUserAddress()), "address should not be operator");
     }
 

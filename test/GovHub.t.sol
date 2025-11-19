@@ -33,34 +33,6 @@ contract GovHubTest is Deployer {
         _updateParamByGovHub(key, valueBytes, address(incentivize));
     }
 
-    function testGovCrossChain(uint16 value) public {
-        vm.assume(value >= 10);
-        vm.assume(value <= 10000);
-
-        bytes memory key = "batchSizeForOracle";
-        bytes memory valueBytes = abi.encode(value);
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(crossChain));
-
-        key = "addOrUpdateChannel";
-        valueBytes = abi.encodePacked(uint8(0x58), uint8(0x00), address(incentivize));
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(crossChain));
-
-        key = "enableOrDisableChannel";
-        valueBytes = abi.encodePacked(uint8(0x58), uint8(0x00));
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(crossChain));
-
-        valueBytes = abi.encodePacked(uint8(0x58), uint8(0x01));
-        vm.expectEmit();
-        emit failReasonWithStr("deprecated");
-        _updateParamByGovHub(key, valueBytes, address(crossChain));
-    }
-
     function testGovSlash(uint16 value1, uint16 value2) public {
         uint256 misdemeanorThreshold = slashIndicator.misdemeanorThreshold();
         vm.assume(uint256(value1) > misdemeanorThreshold);

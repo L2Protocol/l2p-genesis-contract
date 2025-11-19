@@ -1,7 +1,6 @@
 pragma solidity 0.6.4;
 
 import "./interface/0.6.x/ISystemReward.sol";
-import "./interface/0.6.x/IRelayerHub.sol";
 
 contract System {
     bool public alreadyInit;
@@ -11,11 +10,7 @@ contract System {
     address public constant VALIDATOR_CONTRACT_ADDR = 0x0000000000000000000000000000000000001000;
     address public constant SLASH_CONTRACT_ADDR = 0x0000000000000000000000000000000000001001;
     address public constant SYSTEM_REWARD_ADDR = 0x0000000000000000000000000000000000001002;
-    address public constant INCENTIVIZE_ADDR = 0x0000000000000000000000000000000000001005;
-    address public constant RELAYERHUB_CONTRACT_ADDR = 0x0000000000000000000000000000000000001006;
     address public constant GOV_HUB_ADDR = 0x0000000000000000000000000000000000001007;
-    address public constant TOKEN_MANAGER_ADDR = 0x0000000000000000000000000000000000001008;
-    address public constant CROSS_CHAIN_CONTRACT_ADDR = 0x0000000000000000000000000000000000002000;
     address public constant STAKING_CONTRACT_ADDR = 0x0000000000000000000000000000000000002001;
     address public constant STAKE_HUB_ADDR = 0x0000000000000000000000000000000000002002;
     address public constant STAKE_CREDIT_ADDR = 0x0000000000000000000000000000000000002003;
@@ -55,26 +50,6 @@ contract System {
 
     modifier onlyValidatorContract() {
         require(msg.sender == VALIDATOR_CONTRACT_ADDR, "the message sender must be validatorSet contract");
-        _;
-    }
-
-    modifier onlyCrossChainContract() {
-        require(msg.sender == CROSS_CHAIN_CONTRACT_ADDR, "the message sender must be cross chain contract");
-        _;
-    }
-
-    modifier onlyRelayerIncentivize() {
-        require(msg.sender == INCENTIVIZE_ADDR, "the message sender must be incentivize contract");
-        _;
-    }
-
-    modifier onlyRelayer() {
-        require(IRelayerHub(RELAYERHUB_CONTRACT_ADDR).isRelayer(msg.sender), "the msg sender is not a relayer");
-        _;
-    }
-
-    modifier onlyTokenManager() {
-        require(msg.sender == TOKEN_MANAGER_ADDR, "the msg sender must be tokenManager");
         _;
     }
 

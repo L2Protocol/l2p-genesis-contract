@@ -164,22 +164,6 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber, IApplica
 
     receive() external payable { }
 
-    /*----------------- Cross Chain App Implement -----------------*/
-    function handleSynPackage(
-        uint8,
-        bytes calldata msgBytes
-    ) external override onlyInit onlyCrossChainContract initValidatorExtraSet returns (bytes memory responsePayload) {
-        revert("deprecated");
-    }
-
-    function handleAckPackage(uint8 channelId, bytes calldata msgBytes) external override onlyCrossChainContract {
-        revert("deprecated");
-    }
-
-    function handleFailAckPackage(uint8 channelId, bytes calldata msgBytes) external override onlyCrossChainContract {
-        revert("deprecated");
-    }
-
     /*----------------- External Functions -----------------*/
     /**
      * @dev Update validator set method after fusion fork.

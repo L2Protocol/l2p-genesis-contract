@@ -32,7 +32,6 @@ interface L2PValidatorSet {
     function BLOCK_FEES_RATIO_SCALE() external view returns (uint256);
     function BURN_ADDRESS() external view returns (address);
     function CODE_OK() external view returns (uint32);
-    function CROSS_CHAIN_CONTRACT_ADDR() external view returns (address);
     function CROSS_STAKE_CHANNELID() external view returns (uint8);
     function DUSTY_INCOMING() external view returns (uint256);
     function ERROR_FAIL_CHECK_VALIDATORS() external view returns (uint32);
@@ -45,7 +44,6 @@ interface L2PValidatorSet {
     function GOV_CHANNELID() external view returns (uint8);
     function GOV_HUB_ADDR() external view returns (address);
     function GOV_TOKEN_ADDR() external view returns (address);
-    function INCENTIVIZE_ADDR() external view returns (address);
     function INIT_BURN_RATIO() external view returns (uint256);
     function INIT_MAINTAIN_SLASH_SCALE() external view returns (uint256);
     function INIT_MAX_NUM_OF_MAINTAINING() external view returns (uint256);
@@ -56,7 +54,6 @@ interface L2PValidatorSet {
     function MAX_NUM_OF_VALIDATORS() external view returns (uint256);
     function MAX_SYSTEM_REWARD_BALANCE() external view returns (uint256);
     function PRECISION() external view returns (uint256);
-    function RELAYERHUB_CONTRACT_ADDR() external view returns (address);
     function SLASH_CHANNELID() external view returns (uint8);
     function SLASH_CONTRACT_ADDR() external view returns (address);
     function STAKE_CREDIT_ADDR() external view returns (address);
@@ -65,7 +62,6 @@ interface L2PValidatorSet {
     function STAKING_CONTRACT_ADDR() external view returns (address);
     function SYSTEM_REWARD_ADDR() external view returns (address);
     function TIMELOCK_ADDR() external view returns (address);
-    function TOKEN_MANAGER_ADDR() external view returns (address);
     function TRANSFER_IN_CHANNELID() external view returns (uint8);
     function TRANSFER_OUT_CHANNELID() external view returns (uint8);
     function VALIDATORS_UPDATE_MESSAGE_TYPE() external view returns (uint8);
