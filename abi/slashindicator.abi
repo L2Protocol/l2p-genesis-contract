@@ -586,12 +586,6 @@
   },
   {
     "type": "event",
-    "name": "crashResponse",
-    "inputs": [],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "failedFelony",
     "inputs": [
       {
@@ -623,32 +617,6 @@
   },
   {
     "type": "event",
-    "name": "knownResponse",
-    "inputs": [
-      {
-        "name": "code",
-        "type": "uint32",
-        "indexed": false,
-        "internalType": "uint32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "maliciousVoteSlashed",
-    "inputs": [
-      {
-        "name": "voteAddrSlice",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "paramChange",
     "inputs": [
       {
@@ -662,19 +630,6 @@
         "type": "bytes",
         "indexed": false,
         "internalType": "bytes"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "unKnownResponse",
-    "inputs": [
-      {
-        "name": "code",
-        "type": "uint32",
-        "indexed": false,
-        "internalType": "uint32"
       }
     ],
     "anonymous": false
