@@ -125,10 +125,6 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     // validator vote address => expiry date
     mapping(bytes => uint256) public voteExpiration;
 
-    // legacy addresses of BC
-    mapping(address => bool) private _legacyConsensusAddress; // @dev deprecated
-    mapping(bytes => bool) private _legacyVoteAddress; // @dev deprecated
-
     // total number of current jailed validators
     uint256 public numOfJailed;
     // max number of jailed validators between breathe block(only for malicious vote and double sign)
@@ -236,12 +232,6 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     // Events for adding and removing NodeIDs.
     event NodeIDAdded(address indexed validator, bytes32 nodeID);
     event NodeIDRemoved(address indexed validator, bytes32 nodeID);
-
-    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount); // @dev deprecated
-    event MigrateFailed(
-        address indexed operatorAddress, address indexed delegator, uint256 l2pAmount, StakeMigrationRespCode respCode
-    ); // @dev deprecated
-    event UnexpectedPackage(uint8 channelId, bytes msgBytes); // @dev deprecated
 
     /*----------------- modifiers -----------------*/
     modifier validatorExist(

@@ -4,7 +4,6 @@ pragma solidity ^0.8.10;
 interface GovHub {
     event failReasonWithBytes(bytes message);
     event failReasonWithStr(string message);
-    event paramChange(string key, bytes value);
 
     function CODE_OK() external view returns (uint32);
     function ERROR_TARGET_CONTRACT_FAIL() external view returns (uint32);

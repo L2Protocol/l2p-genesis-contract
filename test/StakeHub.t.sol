@@ -32,10 +32,6 @@ contract StakeHubTest is Deployer {
     event ValidatorSlashed(address indexed operatorAddress, uint256 jailUntil, uint256 slashAmount, uint8 slashType);
     event ValidatorUnjailed(address indexed operatorAddress);
     event Claimed(address indexed operatorAddress, address indexed delegator, uint256 l2pAmount);
-    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
-    event MigrateFailed(
-        address indexed operatorAddress, address indexed delegator, uint256 l2pAmount, StakeMigrationRespCode respCode
-    );
     event AgentChanged(address indexed operatorAddress, address indexed oldAgent, address indexed newAgent);
 
     enum StakeMigrationRespCode {

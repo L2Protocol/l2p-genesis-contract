@@ -10,7 +10,6 @@ contract ValidatorSetTest is Deployer {
     event RewardDistributed(address indexed operatorAddress, uint256 reward);
     event deprecatedDeposit(address indexed validator, uint256 amount);
     event validatorDeposit(address indexed validator, uint256 amount);
-    event failReasonWithStr(string message);
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
     event unsupportedPackage(uint64 indexed packageSequence, uint8 indexed channelId, bytes payload);
@@ -101,29 +100,48 @@ contract ValidatorSetTest is Deployer {
         vm.stopPrank();
     }
 
-    function testGov() public {
-        bytes memory key = "maxNumOfWorkingCandidates";
-        bytes memory value = bytes(hex"0000000000000000000000000000000000000000000000000000000000000015"); // 21
-        vm.expectEmit(false, false, false, true, address(govHub));
-        emit failReasonWithStr("the maxNumOfWorkingCandidates must be not greater than maxNumOfCandidates");
-        _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.maxNumOfWorkingCandidates(), maxNumOfWorkingCandidates);
+	function testGov() public {
+		bytes memory key = "maxNumOfWorkingCandidates";
+		bytes memory value = bytes(
+			hex"0000000000000000000000000000000000000000000000000000000000000015"
+		); // 21
 
-        value = bytes(hex"000000000000000000000000000000000000000000000000000000000000000a"); // 10
-        _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.maxNumOfWorkingCandidates(), 10);
+		// Invalid: maxNumOfWorkingCandidates > maxNumOfCandidates
+		vm.expectRevert(
+			"the maxNumOfWorkingCandidates must be not greater than maxNumOfCandidates"
+		);
+		_updateParamByGovHub(key, value, address(l2pValidatorSet));
+		// Value must remain unchanged after the failed update
+		assertEq(
+			l2pValidatorSet.maxNumOfWorkingCandidates(),
+			maxNumOfWorkingCandidates
+		);
 
-        key = "maxNumOfCandidates";
-        value = bytes(hex"0000000000000000000000000000000000000000000000000000000000000005"); // 5
-        _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.maxNumOfCandidates(), 5);
-        assertEq(l2pValidatorSet.maxNumOfWorkingCandidates(), 5);
+		// Valid: set maxNumOfWorkingCandidates = 10
+		value = bytes(
+			hex"000000000000000000000000000000000000000000000000000000000000000a"
+		); // 10
+		_updateParamByGovHub(key, value, address(l2pValidatorSet));
+		assertEq(l2pValidatorSet.maxNumOfWorkingCandidates(), 10);
 
-        key = "systemRewardBaseRatio";
-        value = bytes(hex"0000000000000000000000000000000000000000000000000000000000000400"); // 1024
-        _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.systemRewardBaseRatio(), 1024);
-    }
+		// Change maxNumOfCandidates = 5, and ensure maxNumOfWorkingCandidates is synced to 5
+		key = "maxNumOfCandidates";
+		value = bytes(
+			hex"0000000000000000000000000000000000000000000000000000000000000005"
+		); // 5
+		_updateParamByGovHub(key, value, address(l2pValidatorSet));
+		assertEq(l2pValidatorSet.maxNumOfCandidates(), 5);
+		assertEq(l2pValidatorSet.maxNumOfWorkingCandidates(), 5);
+
+		// Also test a normal param update still works
+		key = "systemRewardBaseRatio";
+		value = bytes(
+			hex"0000000000000000000000000000000000000000000000000000000000000400"
+		); // 1024
+		_updateParamByGovHub(key, value, address(l2pValidatorSet));
+		assertEq(l2pValidatorSet.systemRewardBaseRatio(), 1024);
+	}
+
 
     function testValidateSetChange() public {
         for (uint256 i; i < 5; ++i) {

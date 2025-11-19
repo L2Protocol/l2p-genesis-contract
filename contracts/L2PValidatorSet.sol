@@ -24,19 +24,16 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     /*----------------- state of the contract -----------------*/
     Validator[] public currentValidatorSet;
-    uint256 public expireTimeSecondGap;  // @dev deprecated
     uint256 public totalInComing;
 
     // key is the `consensusAddress` of `Validator`,
     // value is the index of the element in `currentValidatorSet`.
     mapping(address => uint256) public currentValidatorSetMap;
-    uint256 public numOfJailed; // @dev deprecated
 
     uint256 public constant BLOCK_FEES_RATIO_SCALE = 10000;
     address public constant BURN_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant INIT_BURN_RATIO = 1000;
     uint256 public burnRatio;
-    bool public burnRatioInitialized; // @dev deprecated
 
     // BEP-127 Temporary Maintenance
     uint256 public constant INIT_MAX_NUM_OF_MAINTAINING = 3;
@@ -60,14 +57,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     uint256 public systemRewardBaseRatio;
     uint256 public previousHeight;
-    uint256 public previousBalanceOfSystemReward; // @dev deprecated
     bytes[] public previousVoteAddrFullSet;
     bytes[] public currentVoteAddrFullSet;
     bool public isSystemRewardIncluded;
-
-    // BEP-294 BC-fusion
-    Validator[] private _tmpMigratedValidatorSet; // @dev deprecated
-    bytes[] private _tmpMigratedVoteAddrs; // @dev deprecated
 
     // BEP-341 Validators can produce consecutive blocks
     uint256 public turnLength; // Consecutive number of blocks a validator receives priority for block production
@@ -137,18 +129,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     event validatorExitMaintenance(address indexed validator);
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
-
-    event validatorJailed(address indexed validator);  // @dev deprecated
-    event validatorEmptyJailed(address indexed validator);  // @dev deprecated
-    event batchTransfer(uint256 amount);  // @dev deprecated
-    event batchTransferFailed(uint256 indexed amount, string reason);  // @dev deprecated
-    event batchTransferLowerFailed(uint256 indexed amount, bytes reason);  // @dev deprecated
-    event directTransfer(address payable indexed validator, uint256 amount);  // @dev deprecated
-    event directTransferFail(address payable indexed validator, uint256 amount);  // @dev deprecated
-    event failReasonWithStr(string message);  // @dev deprecated
-    event unexpectedPackage(uint8 channelId, bytes msgBytes);  // @dev deprecated
-    event tmpValidatorSetUpdated(uint256 validatorsNum);  // @dev deprecated
-
+    
     /*----------------- init -----------------*/
     function init() external onlyNotInit {
         (ValidatorSetPackage memory validatorSetPkg, bool valid) =

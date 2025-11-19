@@ -61,10 +61,6 @@ interface StakeHub {
     event Delegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event DescriptionEdited(address indexed operatorAddress);
     event Initialized(uint8 version);
-    event MigrateFailed(
-        address indexed operatorAddress, address indexed delegator, uint256 l2pAmount, StakeMigrationRespCode respCode
-    );
-    event MigrateSuccess(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
     event ParamChange(string key, bytes value);
     event Paused();
     event ProtectorChanged(address indexed oldProtector, address indexed newProtector);
@@ -82,7 +78,6 @@ interface StakeHub {
     event StakeCreditInitialized(address indexed operatorAddress, address indexed creditContract);
     event UnBlackListed(address indexed target);
     event Undelegated(address indexed operatorAddress, address indexed delegator, uint256 shares, uint256 l2pAmount);
-    event UnexpectedPackage(uint8 channelId, bytes msgBytes);
     event ValidatorCreated(
         address indexed consensusAddress,
         address indexed operatorAddress,

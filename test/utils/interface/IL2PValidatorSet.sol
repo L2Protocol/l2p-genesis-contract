@@ -2,26 +2,16 @@
 pragma solidity ^0.8.10;
 
 interface L2PValidatorSet {
-    event batchTransfer(uint256 amount);
-    event batchTransferFailed(uint256 indexed amount, string reason);
-    event batchTransferLowerFailed(uint256 indexed amount, bytes reason);
     event deprecatedDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
-    event directTransfer(address payable indexed validator, uint256 amount);
-    event directTransferFail(address payable indexed validator, uint256 amount);
-    event failReasonWithStr(string message);
     event feeBurned(uint256 amount);
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event paramChange(string key, bytes value);
     event systemTransfer(uint256 amount);
-    event tmpValidatorSetUpdated(uint256 validatorsNum);
-    event unexpectedPackage(uint8 channelId, bytes msgBytes);
     event validatorDeposit(address indexed validator, uint256 amount);
-    event validatorEmptyJailed(address indexed validator);
     event validatorEnterMaintenance(address indexed validator);
     event validatorExitMaintenance(address indexed validator);
     event validatorFelony(address indexed validator, uint256 amount);
-    event validatorJailed(address indexed validator);
     event validatorMisdemeanor(address indexed validator, uint256 amount);
     event validatorSetUpdated();
 
@@ -61,7 +51,6 @@ interface L2PValidatorSet {
     function systemRewardAntiMEVRatio() external view returns (uint256);
     function l2pChainID() external view returns (uint16);
     function burnRatio() external view returns (uint256);
-    function burnRatioInitialized() external view returns (bool);
     function canEnterMaintenance(uint256 index) external view returns (bool);
     function currentValidatorSet(uint256)
         external
@@ -80,7 +69,6 @@ interface L2PValidatorSet {
     function distributeFinalityReward(address[] memory valAddrs, uint256[] memory weights) external;
     function enterMaintenance() external;
     function exitMaintenance() external;
-    function expireTimeSecondGap() external view returns (uint256);
     function felony(address validator) external;
     function getCurrentValidatorIndex(address validator) external view returns (uint256);
     function getIncoming(address validator) external view returns (uint256);
@@ -101,9 +89,7 @@ interface L2PValidatorSet {
     function maxNumOfWorkingCandidates() external view returns (uint256);
     function misdemeanor(address validator) external;
     function numOfCabinets() external view returns (uint256);
-    function numOfJailed() external view returns (uint256);
     function numOfMaintaining() external view returns (uint256);
-    function previousBalanceOfSystemReward() external view returns (uint256);
     function previousHeight() external view returns (uint256);
     function previousVoteAddrFullSet(uint256) external view returns (bytes memory);
     function removeTmpMigratedValidator(address validator) external;

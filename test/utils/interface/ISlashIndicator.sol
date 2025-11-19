@@ -16,13 +16,9 @@ interface SlashIndicator {
         bytes sig;
     }
 
-    event crashResponse();
     event failedFelony(address indexed validator, uint256 slashCount, bytes failReason);
     event indicatorCleaned();
-    event knownResponse(uint32 code);
-    event maliciousVoteSlashed(bytes32 indexed voteAddrSlice);
     event paramChange(string key, bytes value);
-    event unKnownResponse(uint32 code);
     event validatorSlashed(address indexed validator);
 
     function CODE_OK() external view returns (uint32);

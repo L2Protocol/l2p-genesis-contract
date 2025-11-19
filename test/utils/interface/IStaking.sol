@@ -2,7 +2,6 @@
 pragma solidity ^0.8.10;
 
 interface Staking {
-    event crashResponse(uint8 indexed eventType);
     event delegateFailed(address indexed delegator, address indexed validator, uint256 amount, uint8 errCode);
     event delegateSubmitted(address indexed delegator, address indexed validator, uint256 amount, uint256 relayerFee);
     event delegateSuccess(address indexed delegator, address indexed validator, uint256 amount);

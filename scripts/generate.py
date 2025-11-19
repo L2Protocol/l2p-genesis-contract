@@ -396,13 +396,6 @@ def recover():
             shutil.copyfile(os.path.join(contracts_dir, file), os.path.join(contracts_dir, c_file))
             os.remove(os.path.join(contracts_dir, file))
 
-    contracts_dir = os.path.join(contracts_dir, "deprecated")
-    for file in os.listdir(contracts_dir):
-        if file.endswith(".bak"):
-            c_file = file[:-4] + ".sol"
-            shutil.copyfile(os.path.join(contracts_dir, file), os.path.join(contracts_dir, c_file))
-            os.remove(os.path.join(contracts_dir, file))
-
     print("Recover from the backup successfully")
 
 
