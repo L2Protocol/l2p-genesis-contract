@@ -213,19 +213,6 @@
   },
   {
     "type": "function",
-    "name": "STAKING_CONTRACT_ADDR",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "SYSTEM_REWARD_ADDR",
     "inputs": [],
     "outputs": [
@@ -773,19 +760,6 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "removeTmpMigratedValidator",
-    "inputs": [
-      {
-        "name": "validator",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
