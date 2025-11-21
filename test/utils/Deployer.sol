@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import "./interface/IL2PValidatorSet.sol";
 import "./interface/IGovHub.sol";
 import "./interface/ISlashIndicator.sol";
-import "./interface/IStaking.sol";
 import "./interface/ISystemReward.sol";
 import "./interface/IStakeHub.sol";
 import "./interface/IStakeCredit.sol";
