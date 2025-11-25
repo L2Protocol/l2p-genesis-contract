@@ -76,7 +76,7 @@ contract L2PGovernor is
         whitelistTargets[GOV_HUB_ADDR] = true;
 
         // Different address will be set depending on the environment
-        __Protectable_init_unchained(0xc27bd3c844842c0d376bf419087f9e98231d4693);
+        __Protectable_init_unchained(0xC27bD3c844842C0D376bF419087F9E98231D4693);
     }
 
     /*----------------- external functions -----------------*/
