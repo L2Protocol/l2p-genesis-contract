@@ -4,14 +4,28 @@ const RLP = require('rlp');
 // Configure
 const validators = [
   {
-    consensusAddr: '0x9fB29AAc15b9A4B7F17c3385939b007540f4d791',
-    feeAddr: '0x9fB29AAc15b9A4B7F17c3385939b007540f4d791',
-    l2pFeeAddr: '0x9fB29AAc15b9A4B7F17c3385939b007540f4d791',
+    consensusAddr: '0xae11fb1f89c83c3ad49636a283732a3692de76f9',
+    feeAddr: '0xae11fb1f89c83c3ad49636a283732a3692de76f9',
+    l2pFeeAddr: '0xae11fb1f89c83c3ad49636a283732a3692de76f9',
     votingPower: 0x0000000000000064,
   },
+  {
+    consensusAddr: '0x98803ed812d591b5dcc319652645036b6ca32d1b',
+    feeAddr: '0x98803ed812d591b5dcc319652645036b6ca32d1b',
+    l2pFeeAddr: '0x98803ed812d591b5dcc319652645036b6ca32d1b',
+    votingPower: 0x0000000000000064,
+  },
+  {
+    consensusAddr: '0xda209d1508a1680be75751d0a9923d74997d90f2',
+    feeAddr: '0xda209d1508a1680be75751d0a9923d74997d90f2',
+    l2pFeeAddr: '0xda209d1508a1680be75751d0a9923d74997d90f2',
+    votingPower: 0x0000000000000064,
+  },  
 ];
 const bLSPublicKeys = [
-  '0x85e6972fc98cd3c81d64d40e325acfed44365b97a7567a27939c14dbc7512ddcf54cb1284eb637cfa308ae4e00cb5588',
+  '0x804f961443dc8f08658653883fb024d1307b6968433a1b60280e072d85fe247506c983840d55fc8409a9733a7bf94471',
+  '0xa6d7f4c2fc5f961d43fcd6bdaa5224b718641134ab0414f8bd60efa3d82fee41a63d19fb843179961d652644d4451ded',
+  '0xb5d063d021843a1df55d4a17e2a6e8fd4d8002d179533e31a5c33922f9a725f1771c5ab0223509346dbc8fd27e1360e9'
 ];
 
 // ======== Do not edit below ========
