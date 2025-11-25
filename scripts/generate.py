@@ -217,7 +217,7 @@ def generate_genesis(output="./genesis.json"):
 def mainnet():
     global network, chain_id, hex_chain_id
     network = "mainnet"
-    chain_id = 56
+    chain_id = 12216
     hex_chain_id = convert_chain_id(chain_id)
 
     # mainnet init data

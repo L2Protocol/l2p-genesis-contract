@@ -47,7 +47,7 @@ contract Deployer is Test {
     constructor() {
         // please use the following command to run the test on mainnet fork instead: forge test --rpc-url ${fork_url}
         // vm.createSelectFork("l2p");
-        assertEq(block.chainid, 56);
+        assertEq(block.chainid, 12216);
 
         // setup system contracts
         l2pValidatorSet = L2PValidatorSet(VALIDATOR_CONTRACT_ADDR);

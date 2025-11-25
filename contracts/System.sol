@@ -6,7 +6,7 @@ contract System {
     bool public alreadyInit;
 
     uint32 public constant CODE_OK = 0;
-    uint16 public constant l2pChainID = 0x0038;
+    uint16 public constant l2pChainID = 0x2fb8;
     address public constant VALIDATOR_CONTRACT_ADDR = 0x0000000000000000000000000000000000001000;
     address public constant SLASH_CONTRACT_ADDR = 0x0000000000000000000000000000000000001001;
     address public constant SYSTEM_REWARD_ADDR = 0x0000000000000000000000000000000000001002;
