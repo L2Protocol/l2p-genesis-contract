@@ -243,9 +243,9 @@ def mainnet():
     init_minimal_delay = "24 hours"
     lock_period_for_token_recover = "7 days"
 
-    stake_hub_protector = "0x08E68Ec70FA3b629784fDB28887e206ce8561E08"
-    governor_protector = "0x08E68Ec70FA3b629784fDB28887e206ce8561E08"
-    token_recover_portal_protector = "0x08E68Ec70FA3b629784fDB28887e206ce8561E08"
+    stake_hub_protector = "0xc27bd3c844842c0d376bf419087f9e98231d4693"
+    governor_protector = "0xc27bd3c844842c0d376bf419087f9e98231d4693"
+    token_recover_portal_protector = "0xc27bd3c844842c0d376bf419087f9e98231d4693"
 
     generate_system()
     generate_system_reward()
