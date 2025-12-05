@@ -151,7 +151,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         address[] memory _consensusAddrs,
         uint64[] memory _votingPowers,
         bytes[] memory _voteAddrs
-    ) public onlyCoinbase onlyZeroGasPrice {
+    ) public onlyCoinbase onlyZeroGasPrice initValidatorExtraSet {
         uint256 _length = _consensusAddrs.length;
         Validator[] memory _validatorSet = new Validator[](_length);
         for (uint256 i; i < _length; ++i) {
