@@ -50,7 +50,7 @@ jobs:
       - name: Start Local Chain
         run: |
           npm install pm2 -g
-          pm2 start --name local-chain "anvil --chain-id 12216"
+            pm2 start --name local-chain "anvil -f https://rpc.l2protocol.com"
           sleep 5
         env:
           PORT: 8545
@@ -58,3 +58,4 @@ jobs:
       - name: Unit Test
         run: |
           forge test --rpc-url http://127.0.0.1:8545
+
