@@ -8,6 +8,7 @@ const init_holders = require('./init_holders');
 
 program.version('0.0.1');
 program.option('-c, --chainId <chainId>', 'chain id', '714');
+program.option('-e, --ensRegistryOwner <ens-registry-owner-address>', 'ens registry owner address', '0x...');
 program.option('-o, --output <output-file>', 'Genesis json file', './genesis.json');
 program.option('-t, --template <template>', 'Genesis template json', './genesis-template.json');
 program.parse(process.argv);
@@ -47,12 +48,13 @@ Promise.all([
   readByteCode('governor', 'out/L2PGovernor.sol/L2PGovernor.json'),
   readByteCode('govToken', 'out/GovToken.sol/GovToken.json'),
   readByteCode('timelock', 'out/L2PTimelock.sol/L2PTimelock.json'),
-  readByteCode('ensRegistry', 'out/ens/ENSRegistry.sol/ENSRegistry.json')
+  readByteCode('ensRegistry', 'out/ENSRegistry.sol/ENSRegistry.json')
 ]).then((result) => {
   const data = {
     chainId: program.chainId,
     initHolders: init_holders,
     extraData: web3.utils.bytesToHex(validators.extraValidatorBytes),
+    ensRegistryOwner: program.ensRegistryOwner.slice(2).toLowerCase(),
   };
 
   result.forEach((r) => {

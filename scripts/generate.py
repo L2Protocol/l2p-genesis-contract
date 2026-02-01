@@ -16,6 +16,7 @@ if work_dir.endswith("scripts"):
 network: str
 chain_id: int
 hex_chain_id: str
+ens_registry_owner: str
 
 main = typer.Typer()
 
@@ -210,14 +211,15 @@ def generate_gov_hub():
 
 def generate_genesis(output="./genesis.json"):
     subprocess.run(["forge", "build"], cwd=work_dir, check=True)
-    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--output", f"{output}"], cwd=work_dir, check=True)
+    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--ensRegistryOwner", f"{ens_registry_owner}", "--output", f"{output}"], cwd=work_dir, check=True)
 
 
 @main.command(help="Generate contracts for L2P mainnet")
 def mainnet():
-    global network, chain_id, hex_chain_id
+    global network, chain_id, hex_chain_id, ens_registry_owner
     network = "mainnet"
     chain_id = 12216
+    ens_registry_owner = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
     hex_chain_id = convert_chain_id(chain_id)
 
     # mainnet init data
