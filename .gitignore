@@ -8,6 +8,7 @@ cache/
 broadcast/
 
 contracts/flattened/*.sol
+contracts/flattened/ens/*.sol
 
 # foundry lib
 lib/forge-std/

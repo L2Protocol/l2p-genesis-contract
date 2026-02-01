@@ -97,6 +97,10 @@
       "0x0000000000000000000000000000000000002006": {
       "balance": "0x0",
       "code": "{{timelock}}"
+    },
+      "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e": {
+      "balance": "0x0",
+      "code": "{{ensRegistry}}"
     }{% for v in initHolders %},
     "{{ v.address.replace('0x', '') }}": {
       "balance": "0x{{ v.balance }}"
