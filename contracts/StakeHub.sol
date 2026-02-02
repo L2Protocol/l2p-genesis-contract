@@ -577,7 +577,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      * @param operatorAddress the operator address of the validator
      * @param requestNumber the request number of the undelegation. 0 means claim all
      */
-    function claim(address operatorAddress, uint256 requestNumber) external whenNotPaused notInBlackList {
+    function claim(
+        address operatorAddress,
+        uint256 requestNumber
+    ) external whenNotPaused notInBlackList {
         _claim(operatorAddress, requestNumber);
     }
 
@@ -728,7 +731,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      * @param key the key of the param
      * @param value the value of the param
      */
-    function updateParam(string calldata key, bytes calldata value) external onlyGov {
+    function updateParam(
+        string calldata key,
+        bytes calldata value
+    ) external onlyGov {
         if (key.compareStrings("transferGasLimit")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newTransferGasLimit = value.bytesToUint256(32);
@@ -817,7 +823,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      *
      * @return the validator's reward of the day
      */
-    function getValidatorRewardRecord(address operatorAddress, uint256 index) external view returns (uint256) {
+    function getValidatorRewardRecord(
+        address operatorAddress,
+        uint256 index
+    ) external view returns (uint256) {
         if (!_validatorSet.contains(operatorAddress)) revert ValidatorNotExisted();
         return IStakeCredit(_validators[operatorAddress].creditContract).rewardRecord(index);
     }
@@ -828,7 +837,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      *
      * @return the validator's total pooled L2P of the day
      */
-    function getValidatorTotalPooledL2PRecord(address operatorAddress, uint256 index) external view returns (uint256) {
+    function getValidatorTotalPooledL2PRecord(
+        address operatorAddress,
+        uint256 index
+    ) external view returns (uint256) {
         if (!_validatorSet.contains(operatorAddress)) revert ValidatorNotExisted();
         return IStakeCredit(_validators[operatorAddress].creditContract).totalPooledL2PRecord(index);
     }
@@ -1178,7 +1190,9 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         bytes memory output = new bytes(1);
         assembly {
             let len := mload(input)
-            if iszero(staticcall(not(0), 0x66, add(input, 0x20), len, add(output, 0x20), 0x01)) { revert(0, 0) }
+            if iszero(staticcall(not(0), 0x66, add(input, 0x20), len, add(output, 0x20), 0x01)) {
+                revert(0, 0)
+            }
         }
         uint8 result = uint8(output[0]);
         if (result != uint8(1)) {
@@ -1187,7 +1201,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         return true;
     }
 
-    function _deployStakeCredit(address operatorAddress, string memory moniker) internal returns (address) {
+    function _deployStakeCredit(
+        address operatorAddress,
+        string memory moniker
+    ) internal returns (address) {
         address creditProxy = address(new TransparentUpgradeableProxy(STAKE_CREDIT_ADDR, DEAD_ADDRESS, ""));
         IStakeCredit(creditProxy).initialize{ value: msg.value }(operatorAddress, moniker);
         emit StakeCreditInitialized(operatorAddress, creditProxy);
@@ -1208,7 +1225,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         }
     }
 
-    function _checkFelonyRecord(address operatorAddress, SlashType slashType) internal returns (bool, uint256) {
+    function _checkFelonyRecord(
+        address operatorAddress,
+        SlashType slashType
+    ) internal returns (bool, uint256) {
         bytes32 slashKey = keccak256(abi.encodePacked(operatorAddress, slashType));
         uint256 jailUntil = _felonyRecords[slashKey];
         // for double sign and malicious vote slash
@@ -1221,7 +1241,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         return (true, jailUntil);
     }
 
-    function _jailValidator(Validator storage valInfo, uint256 jailUntil) internal {
+    function _jailValidator(
+        Validator storage valInfo,
+        uint256 jailUntil
+    ) internal {
         // keep the last eligible validator
         bool isLast = (numOfJailed >= _validatorSet.length() - 1);
         if (isLast) {
@@ -1242,7 +1265,10 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         }
     }
 
-    function _claim(address operatorAddress, uint256 requestNumber) internal validatorExist(operatorAddress) {
+    function _claim(
+        address operatorAddress,
+        uint256 requestNumber
+    ) internal validatorExist(operatorAddress) {
         uint256 l2pAmount = IStakeCredit(_validators[operatorAddress].creditContract).claim(msg.sender, requestNumber);
         emit Claimed(operatorAddress, msg.sender, l2pAmount);
     }

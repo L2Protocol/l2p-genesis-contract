@@ -15,11 +15,7 @@ interface ENS {
     event NewTTL(bytes32 indexed node, uint64 ttl);
 
     // Logged when an operator is added or removed.
-    event ApprovalForAll(
-        address indexed owner,
-        address indexed operator,
-        bool approved
-    );
+    event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
     function setRecord(
         bytes32 node,
@@ -42,21 +38,41 @@ interface ENS {
         address owner
     ) external returns (bytes32);
 
-    function setResolver(bytes32 node, address resolver) external;
+    function setResolver(
+        bytes32 node,
+        address resolver
+    ) external;
 
-    function setOwner(bytes32 node, address owner) external;
+    function setOwner(
+        bytes32 node,
+        address owner
+    ) external;
 
-    function setTTL(bytes32 node, uint64 ttl) external;
+    function setTTL(
+        bytes32 node,
+        uint64 ttl
+    ) external;
 
-    function setApprovalForAll(address operator, bool approved) external;
+    function setApprovalForAll(
+        address operator,
+        bool approved
+    ) external;
 
-    function owner(bytes32 node) external view returns (address);
+    function owner(
+        bytes32 node
+    ) external view returns (address);
 
-    function resolver(bytes32 node) external view returns (address);
+    function resolver(
+        bytes32 node
+    ) external view returns (address);
 
-    function ttl(bytes32 node) external view returns (uint64);
+    function ttl(
+        bytes32 node
+    ) external view returns (uint64);
 
-    function recordExists(bytes32 node) external view returns (bool);
+    function recordExists(
+        bytes32 node
+    ) external view returns (bool);
 
     function isApprovedForAll(
         address owner,

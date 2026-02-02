@@ -28,7 +28,10 @@ contract L2PTimelock is SystemV2, Initializable, TimelockControllerUpgradeable {
      * @param key the key of the param
      * @param value the value of the param
      */
-    function updateParam(string calldata key, bytes calldata value) external onlyGov {
+    function updateParam(
+        string calldata key,
+        bytes calldata value
+    ) external onlyGov {
         if (key.compareStrings("minDelay")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newMinDelay = value.bytesToUint256(32);

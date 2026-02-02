@@ -14,7 +14,9 @@ contract ENSRegistry is ENS {
     mapping(address => mapping(address => bool)) operators;
 
     // Permits modifications only by the owner of the specified node.
-    modifier authorised(bytes32 node) {
+    modifier authorised(
+        bytes32 node
+    ) {
         address owner = records[node].owner;
         require(owner == msg.sender || operators[owner][msg.sender]);
         _;
@@ -143,7 +145,9 @@ contract ENSRegistry is ENS {
     /// @dev Returns the TTL of a node, and any records associated with it.
     /// @param node The specified node.
     /// @return ttl of the node.
-    function ttl(bytes32 node) public view virtual override returns (uint64) {
+    function ttl(
+        bytes32 node
+    ) public view virtual override returns (uint64) {
         return records[node].ttl;
     }
 
@@ -167,7 +171,10 @@ contract ENSRegistry is ENS {
         return operators[owner][operator];
     }
 
-    function _setOwner(bytes32 node, address owner) internal virtual {
+    function _setOwner(
+        bytes32 node,
+        address owner
+    ) internal virtual {
         records[node].owner = owner;
     }
 

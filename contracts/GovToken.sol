@@ -47,7 +47,10 @@ contract GovToken is
      * @param stakeCredit the stakeCredit Token contract
      * @param account the account to sync gov tokens to
      */
-    function sync(address stakeCredit, address account) external onlyStakeHub {
+    function sync(
+        address stakeCredit,
+        address account
+    ) external onlyStakeHub {
         _sync(stakeCredit, account);
     }
 
@@ -56,7 +59,10 @@ contract GovToken is
      * @param stakeCredits the stakeCredit Token contracts
      * @param account the account to sync gov tokens to
      */
-    function syncBatch(address[] calldata stakeCredits, address account) external onlyStakeHub {
+    function syncBatch(
+        address[] calldata stakeCredits,
+        address account
+    ) external onlyStakeHub {
         uint256 _length = stakeCredits.length;
         for (uint256 i = 0; i < _length; ++i) {
             _sync(stakeCredits[i], account);
@@ -68,7 +74,10 @@ contract GovToken is
      * @param delegator the delegator
      * @param delegatee the delegatee
      */
-    function delegateVote(address delegator, address delegatee) external onlyStakeHub {
+    function delegateVote(
+        address delegator,
+        address delegatee
+    ) external onlyStakeHub {
         _delegate(delegator, delegatee);
     }
 
@@ -78,12 +87,18 @@ contract GovToken is
         revert BurnNotAllowed();
     }
 
-    function burnFrom(address, uint256) public pure override {
+    function burnFrom(
+        address,
+        uint256
+    ) public pure override {
         revert BurnNotAllowed();
     }
 
     /*----------------- internal functions -----------------*/
-    function _sync(address stakeCredit, address account) internal {
+    function _sync(
+        address stakeCredit,
+        address account
+    ) internal {
         uint256 latestL2PAmount = IStakeCredit(stakeCredit).getPooledL2P(account);
         uint256 _mintedAmount = mintedMap[stakeCredit][account];
 
@@ -98,11 +113,19 @@ contract GovToken is
         }
     }
 
-    function _transfer(address, address, uint256) internal pure override {
+    function _transfer(
+        address,
+        address,
+        uint256
+    ) internal pure override {
         revert TransferNotAllowed();
     }
 
-    function _approve(address, address, uint256) internal pure override {
+    function _approve(
+        address,
+        address,
+        uint256
+    ) internal pure override {
         revert ApproveNotAllowed();
     }
 
@@ -114,11 +137,17 @@ contract GovToken is
         ERC20VotesUpgradeable._afterTokenTransfer(from, to, amount);
     }
 
-    function _mint(address to, uint256 amount) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
+    function _mint(
+        address to,
+        uint256 amount
+    ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
         ERC20VotesUpgradeable._mint(to, amount);
     }
 
-    function _burn(address account, uint256 amount) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
+    function _burn(
+        address account,
+        uint256 amount
+    ) internal override(ERC20Upgradeable, ERC20VotesUpgradeable) {
         ERC20VotesUpgradeable._burn(account, amount);
     }
 }
