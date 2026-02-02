@@ -7,3 +7,4 @@ forge flatten contracts/StakeCredit.sol -o contracts/flattened/StakeCredit.sol
 forge flatten contracts/L2PGovernor.sol -o contracts/flattened/L2PGovernor.sol
 forge flatten contracts/GovToken.sol -o contracts/flattened/GovToken.sol
 forge flatten contracts/L2PTimelock.sol -o contracts/flattened/L2PTimelock.sol
+forge flatten contracts/ens/ENSRegistry.sol -o contracts/flattened/ens/ENSRegistry.sol
