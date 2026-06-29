@@ -257,13 +257,13 @@ contract StakeHub is SystemV2, Initializable, Protectable {
      */
     function initialize() external initializer onlyCoinbase onlyZeroGasPrice {
         transferGasLimit = 5000;
-        minSelfDelegationL2P = 2_000 ether;
+        minSelfDelegationL2P = 7_000_000 ether;
         minDelegationL2PChange = 1 ether;
         maxElectedValidators = 45;
         unbondPeriod = 7 days;
         redelegateFeeRate = 2;
-        downtimeSlashAmount = 10 ether;
-        felonySlashAmount = 200 ether;
+        downtimeSlashAmount = 35_000 ether;
+        felonySlashAmount = 3_500_000 ether;
         downtimeJailTime = 2 days;
         felonyJailTime = 30 days;
         maxFelonyBetweenBreatheBlock = 2;
@@ -781,7 +781,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         } else if (key.compareStrings("felonySlashAmount")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newFelonySlashAmount = value.bytesToUint256(32);
-            if (newFelonySlashAmount < 10 ether || newFelonySlashAmount <= downtimeSlashAmount) {
+            if (newFelonySlashAmount < 35_000 ether || newFelonySlashAmount <= downtimeSlashAmount) {
                 revert InvalidValue(key, value);
             }
             felonySlashAmount = newFelonySlashAmount;

@@ -52,7 +52,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     // BEP-126 Fast Finality
     uint256 public constant INIT_SYSTEM_REWARD_RATIO = 625; // 625/10000 is 1/16
-    uint256 public constant MAX_SYSTEM_REWARD_BALANCE = 100 ether;
+    uint256 public constant MAX_SYSTEM_REWARD_BALANCE = 3_500_000 ether;
 
     uint256 public systemRewardBaseRatio;
     uint256 public previousHeight;
@@ -63,6 +63,20 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     // BEP-341 Validators can produce consecutive blocks
     uint256 public turnLength; // Consecutive number of blocks a validator receives priority for block production
     uint256 public systemRewardAntiMEVRatio;
+
+    uint256 public constant EMISSION_POOL_TOTAL          = 50_000_000_000 ether;
+    uint256 public constant EMISSION_RATE_PER_BLOCK_INIT = 317 ether;
+    uint256 public constant EMISSION_HALVING_PERIOD_INIT = 105_192_000;
+    uint256 public constant EMISSION_START_BLOCK_INIT = 21_038_400;
+    uint256 public constant EMISSION_MAX_HALVINGS_INIT   = 2;
+
+    uint256 public emissionRatePerBlock;  
+    uint256 public emissionHalvingPeriod; 
+    uint256 public emissionMaxHalvings;   
+    uint256 public emissionPoolRemaining; 
+    uint256 public emissionStartBlock;    
+    uint256 public emissionLastBlock;     
+    uint256 public totalEmitted;          
 
     struct Validator {
         address consensusAddress;
@@ -128,6 +142,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     event validatorExitMaintenance(address indexed validator);
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
+    event emissionDistributed(uint256 epochEmission, uint256 poolRemaining);
     
     /*----------------- init -----------------*/
     function init() external onlyNotInit {
@@ -138,6 +153,16 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             currentValidatorSet.push(validatorSetPkg.validatorSet[i]);
             currentValidatorSetMap[validatorSetPkg.validatorSet[i].consensusAddress] = i + 1;
         }
+
+        require(address(this).balance == EMISSION_POOL_TOTAL, "emission pool genesis balance mismatch");
+
+        emissionRatePerBlock  = EMISSION_RATE_PER_BLOCK_INIT;
+        emissionHalvingPeriod = EMISSION_HALVING_PERIOD_INIT;
+        emissionMaxHalvings   = EMISSION_MAX_HALVINGS_INIT;
+        emissionPoolRemaining = EMISSION_POOL_TOTAL;
+        emissionStartBlock    = EMISSION_START_BLOCK_INIT;
+        emissionLastBlock     = EMISSION_START_BLOCK_INIT;
+
         alreadyInit = true;
     }
 
@@ -172,7 +197,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         (Validator[] memory validatorSetTemp, bytes[] memory voteAddrsTemp) =
             _forceMaintainingValidatorsExit(_validatorSet, _voteAddrs);
 
-        // step 1: distribute incoming
+        // step 1a: accrue emission into each active validator's incoming (stake-proportional)
+        _accrueEmission();
+
+        // step 1b: distribute incoming (gas fees + emission)
         for (uint256 i; i < currentValidatorSet.length; ++i) {
             uint256 incoming = currentValidatorSet[i].incoming;
             if (incoming != 0) {
@@ -181,10 +209,12 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             }
         }
 
-        // step 2: do dusk transfer
-        if (address(this).balance > 0) {
-            emit systemTransfer(address(this).balance);
-            address(uint160(SYSTEM_REWARD_ADDR)).transfer(address(this).balance);
+        // step 2: do dusk transfer — only sweep fee dust, never the emission pool
+        uint256 contractBal = address(this).balance;
+        uint256 dust = contractBal > emissionPoolRemaining ? contractBal - emissionPoolRemaining : 0;
+        if (dust > 0) {
+            emit systemTransfer(dust);
+            address(uint160(SYSTEM_REWARD_ADDR)).transfer(dust);
         }
 
         // step 3: do update validator set state
@@ -634,6 +664,21 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
                 "the turnLength should be in [3,64] or equal to 1"
             );
             turnLength = newTurnLength;
+        } else if (Memory.compareStrings(key, "emissionRatePerBlock")) {
+            require(value.length == 32, "length of emissionRatePerBlock mismatch");
+            uint256 newRate = BytesToTypes.bytesToUint256(32, value);
+            require(newRate <= 10_000 ether, "emissionRatePerBlock too high");
+            emissionRatePerBlock = newRate;
+        } else if (Memory.compareStrings(key, "emissionHalvingPeriod")) {
+            require(value.length == 32, "length of emissionHalvingPeriod mismatch");
+            uint256 newPeriod = BytesToTypes.bytesToUint256(32, value);
+            require(newPeriod >= 1_000_000, "emissionHalvingPeriod too short");
+            emissionHalvingPeriod = newPeriod;
+        } else if (Memory.compareStrings(key, "emissionMaxHalvings")) {
+            require(value.length == 32, "length of emissionMaxHalvings mismatch");
+            uint256 newMax = BytesToTypes.bytesToUint256(32, value);
+            require(newMax >= 1 && newMax <= 20, "emissionMaxHalvings out of range");
+            emissionMaxHalvings = newMax;
         } else {
             require(false, "unknown param");
         }
@@ -641,6 +686,76 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     }
 
     /*----------------- Internal Functions -----------------*/
+
+    function _accrueEmission() private {
+        if (emissionPoolRemaining == 0 || emissionLastBlock >= block.number) {
+            return;
+        }
+
+        if (block.number <= emissionStartBlock) {
+            return;
+        }        
+
+        uint256 elapsed = block.number - emissionLastBlock;
+        emissionLastBlock = block.number;
+
+        uint256 window = (block.number - emissionStartBlock) / emissionHalvingPeriod;
+        if (window >= emissionMaxHalvings) {
+            return;
+        }
+
+        uint256 rate = emissionRatePerBlock >> window;
+        uint256 epochEmission = rate.mul(elapsed);
+        if (epochEmission > emissionPoolRemaining) {
+            epochEmission = emissionPoolRemaining;
+        }
+
+        uint256 availablePool = address(this).balance > totalInComing
+            ? address(this).balance - totalInComing
+            : 0;
+        if (epochEmission > availablePool) {
+            epochEmission = availablePool;
+        }
+
+        if (epochEmission == 0) {
+            return;
+        }
+
+        uint256 totalVotingPower;
+        uint256 lastActive;
+        uint256 n = currentValidatorSet.length;
+        for (uint256 i; i < n; ++i) {
+            if (!currentValidatorSet[i].jailed) {
+                totalVotingPower = totalVotingPower.add(currentValidatorSet[i].votingPower);
+                lastActive = i;
+            }
+        }
+
+        if (totalVotingPower == 0) {
+            return;
+        }
+
+        uint256 distributed;
+
+        for (uint256 i; i < n; ++i) {
+            if (!currentValidatorSet[i].jailed) {
+                uint256 share;
+                if (i == lastActive) {
+                    share = epochEmission.sub(distributed);
+                } else {
+                    share = epochEmission.mul(currentValidatorSet[i].votingPower).div(totalVotingPower);
+                    distributed = distributed.add(share);
+                }
+                currentValidatorSet[i].incoming = currentValidatorSet[i].incoming.add(share);
+                totalInComing = totalInComing.add(share);
+            }
+        }
+
+        emissionPoolRemaining = emissionPoolRemaining.sub(epochEmission);
+        totalEmitted = totalEmitted.add(epochEmission);
+        emit emissionDistributed(epochEmission, emissionPoolRemaining);
+    }
+
     function doUpdateState(Validator[] memory newValidatorSet, bytes[] memory newVoteAddrs) private {
         uint256 n = currentValidatorSet.length;
         uint256 m = newValidatorSet.length;
