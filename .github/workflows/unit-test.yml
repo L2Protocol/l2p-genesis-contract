@@ -36,7 +36,7 @@ jobs:
       - name: Install Project Dependencies
         run: |
           npm install
-          forge install --no-git foundry-rs/forge-std@v1.7.3
+          forge install foundry-rs/forge-std@v1.7.3
           forge --version
 
       - name: Lint Check
