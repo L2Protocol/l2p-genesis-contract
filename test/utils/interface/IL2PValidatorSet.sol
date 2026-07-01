@@ -4,6 +4,7 @@ pragma solidity ^0.8.10;
 interface L2PValidatorSet {
     event deprecatedDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
+    event emissionDistributed(uint256 epochEmission, uint256 poolRemaining);
     event feeBurned(uint256 amount);
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event paramChange(string key, bytes value);
@@ -21,6 +22,11 @@ interface L2PValidatorSet {
     function BURN_ADDRESS() external view returns (address);
     function CODE_OK() external view returns (uint32);
     function DUSTY_INCOMING() external view returns (uint256);
+    function EMISSION_HALVING_PERIOD_INIT() external view returns (uint256);
+    function EMISSION_MAX_HALVINGS_INIT() external view returns (uint256);
+    function EMISSION_POOL_TOTAL() external view returns (uint256);
+    function EMISSION_RATE_PER_BLOCK_INIT() external view returns (uint256);
+    function EMISSION_START_BLOCK_INIT() external view returns (uint256);
     function ERROR_FAIL_CHECK_VALIDATORS() external view returns (uint32);
     function ERROR_LEN_OF_VAL_MISMATCH() external view returns (uint32);
     function ERROR_RELAYFEE_TOO_LARGE() external view returns (uint32);
@@ -66,6 +72,12 @@ interface L2PValidatorSet {
     function currentVoteAddrFullSet(uint256) external view returns (bytes memory);
     function deposit(address valAddr) external payable;
     function distributeFinalityReward(address[] memory valAddrs, uint256[] memory weights) external;
+    function emissionHalvingPeriod() external view returns (uint256);
+    function emissionLastBlock() external view returns (uint256);
+    function emissionMaxHalvings() external view returns (uint256);
+    function emissionPoolRemaining() external view returns (uint256);
+    function emissionRatePerBlock() external view returns (uint256);
+    function emissionStartBlock() external view returns (uint256);
     function enterMaintenance() external;
     function exitMaintenance() external;
     function felony(address validator) external;
@@ -91,6 +103,7 @@ interface L2PValidatorSet {
     function numOfMaintaining() external view returns (uint256);
     function previousHeight() external view returns (uint256);
     function previousVoteAddrFullSet(uint256) external view returns (bytes memory);
+    function totalEmitted() external view returns (uint256);
     function totalInComing() external view returns (uint256);
     function turnLength() external view returns (uint256);
     function updateParam(string memory key, bytes memory value) external;
