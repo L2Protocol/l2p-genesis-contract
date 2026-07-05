@@ -25,7 +25,7 @@ poetry install
 Tips: You can manage multi version of Node:
 ```Shell
 ## Install nvm and node
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.2/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/refs/tags/v0.40.5/install.sh | bash
 nvm install 18.17.0 && nvm use 18.17.0
 ```
 
