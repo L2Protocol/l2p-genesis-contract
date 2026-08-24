@@ -13,6 +13,8 @@ contract SystemReward is System, IParamSubscriber, ISystemReward {
 
     modifier doInit() {
         if (!alreadyInit) {
+            operators[VALIDATOR_CONTRACT_ADDR] = true;
+            operators[SLASH_CONTRACT_ADDR] = true;
             numOperator = 2;
             alreadyInit = true;
         }

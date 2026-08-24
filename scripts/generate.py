@@ -166,18 +166,6 @@ def generate_system():
     replace_parameter(contract, "uint16 public constant l2pChainID", f"0x{hex_chain_id}")
 
 
-def generate_system_reward():
-    if network == "dev":
-        contract = "SystemReward.sol"
-        backup_file(
-            os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
-        )
-
-        insert(contract, "numOperator = 2;", "\t\toperators[VALIDATOR_CONTRACT_ADDR] = true;")
-        insert(contract, "numOperator = 2;", "\t\toperators[SLASH_CONTRACT_ADDR] = true;")
-        replace(contract, "numOperator = 2;", "numOperator = 4;")
-
-
 def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
     contract = "L2PValidatorSet.sol"
     backup_file(
@@ -250,7 +238,6 @@ def mainnet():
     token_recover_portal_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
 
     generate_system()
-    generate_system_reward()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)
@@ -303,7 +290,6 @@ def testnet():
     token_recover_portal_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
 
     generate_system()
-    generate_system_reward()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)
@@ -371,7 +357,6 @@ def dev(
         raise Exception(f"Error getting init_validatorset_bytes: {e}")
 
     generate_system()
-    generate_system_reward()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
     generate_validator_set(init_validator_set_bytes, init_burn_ratio)

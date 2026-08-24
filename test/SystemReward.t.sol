@@ -26,7 +26,11 @@ contract SystemRewardTest is Deployer {
         payable(address(systemReward)).transfer(1 ether);
         vm.expectEmit(true, false, false, true, address(systemReward));
         emit rewardTo(newAccount, 1 ether);
+        vm.prank(SLASH_CONTRACT_ADDR);
         systemReward.claimRewards(newAccount, 1 ether);
+
+        assertTrue(systemReward.isOperator(VALIDATOR_CONTRACT_ADDR), "validator set should be operator");
+        assertTrue(systemReward.isOperator(SLASH_CONTRACT_ADDR), "slash indicator should be operator");
 
         vm.expectRevert("only operator is allowed to call the method");
         systemReward.claimRewards(newAccount, 1 ether);
@@ -34,6 +38,7 @@ contract SystemRewardTest is Deployer {
         vm.deal(address(systemReward), 0);
         vm.expectEmit(false, false, false, false, address(systemReward));
         emit rewardEmpty();
+        vm.prank(SLASH_CONTRACT_ADDR);
         systemReward.claimRewards(newAccount, 1 ether);
     }
 
