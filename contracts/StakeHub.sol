@@ -743,7 +743,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         } else if (key.compareStrings("minSelfDelegationL2P")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newMinSelfDelegationL2P = value.bytesToUint256(32);
-            if (newMinSelfDelegationL2P < 1000 ether || newMinSelfDelegationL2P > 100_000 ether) {
+            if (newMinSelfDelegationL2P < 3_500_000 ether || newMinSelfDelegationL2P > 350_000_000 ether) {
                 revert InvalidValue(key, value);
             }
             minSelfDelegationL2P = newMinSelfDelegationL2P;
