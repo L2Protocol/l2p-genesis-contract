@@ -15,8 +15,8 @@ contract SlashIndicatorTest is Deployer {
     address public validator0;
     address public validatorLast;
 
-    uint256 public constant MISDEMEANOR_THRESHOLD = 200;
-    uint256 public constant FELONY_THRESHOLD = 600;
+    uint256 public constant MISDEMEANOR_THRESHOLD = 50;
+    uint256 public constant FELONY_THRESHOLD = 150;
 
     function setUp() public {
         burnRatio =

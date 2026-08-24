@@ -252,9 +252,9 @@ contract GovernorTest is Deployer {
         vm.startPrank(delegator);
         assert(governor.proposeStarted());
 
-        vm.deal(delegator, 20_000_000 ether);
+        uint256 l2pAmount = govToken.totalSupply() / 2 + 10_000_000 ether;
+        vm.deal(delegator, l2pAmount * 2);
 
-        uint256 l2pAmount = 10_000_000 ether;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);
@@ -302,15 +302,13 @@ contract GovernorTest is Deployer {
         uint256 _nowBlock = block.number;
         uint256 _now = block.timestamp;
 
-        uint256 BLOCK_INTERVAL = 3 seconds;
-        uint256 INIT_VOTING_PERIOD = 7 days / BLOCK_INTERVAL;
-        uint256 NEW_VOTING_PERIOD = INIT_VOTING_PERIOD * 4;
-        uint64 INIT_MIN_PERIOD_AFTER_QUORUM = uint64(1 days / BLOCK_INTERVAL);
-        uint64 NEW_MIN_PERIOD_AFTER_QUORUM = INIT_MIN_PERIOD_AFTER_QUORUM * 4;
-        vm.roll(_nowBlock + NEW_VOTING_PERIOD - 1);
-        vm.warp(_now + (NEW_VOTING_PERIOD - 1) * BLOCK_INTERVAL / 2);
+        uint64 minPeriodAfterQuorum = governor.lateQuorumVoteExtension();
 
         uint256 deadline = governor.proposalDeadline(proposalId);
+        vm.roll(deadline - 1);
+        vm.warp(_now + (deadline - 1 - _nowBlock) * 1500 / 1000);
+
+        deadline = governor.proposalDeadline(proposalId);
         console2.log("block.number", block.number);
         console2.log("deadline block", deadline);
         assertEq(deadline, block.number + 1);
@@ -321,7 +319,7 @@ contract GovernorTest is Deployer {
         console2.log("block.number", block.number);
         console2.log("deadline block", deadline);
         // quorum reached, deadline should be added 1 day
-        assertEq(deadline, block.number + NEW_MIN_PERIOD_AFTER_QUORUM);
+        assertEq(deadline, block.number + minPeriodAfterQuorum);
     }
 
     function testPropose() public {
@@ -330,9 +328,9 @@ contract GovernorTest is Deployer {
         vm.startPrank(delegator);
         assert(governor.proposeStarted());
 
-        vm.deal(delegator, 20_000_000 ether);
+        uint256 l2pAmount = govToken.totalSupply() / 2 + 10_000_000 ether;
+        vm.deal(delegator, l2pAmount * 2);
 
-        uint256 l2pAmount = 10_000_000 ether;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);

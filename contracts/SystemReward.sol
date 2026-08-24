@@ -6,7 +6,7 @@ import "./interface/0.6.x/IParamSubscriber.sol";
 import "./interface/0.6.x/ISystemReward.sol";
 
 contract SystemReward is System, IParamSubscriber, ISystemReward {
-    uint256 public constant MAX_REWARDS = 5e18;
+    uint256 public constant MAX_REWARDS = 17_500 ether;
 
     uint256 public numOperator;
     mapping(address => bool) operators;
@@ -56,11 +56,16 @@ contract SystemReward is System, IParamSubscriber, ISystemReward {
         return actualAmount;
     }
 
-    function isOperator(address addr) external view returns (bool) {
+    function isOperator(
+        address addr
+    ) external view returns (bool) {
         return operators[addr];
     }
 
-    function updateParam(string calldata key, bytes calldata value) external override onlyGov {
+    function updateParam(
+        string calldata key,
+        bytes calldata value
+    ) external override onlyGov {
         if (Memory.compareStrings(key, "addOperator")) {
             bytes memory valueLocal = value;
             require(valueLocal.length == 20, "length of value for addOperator should be 20");

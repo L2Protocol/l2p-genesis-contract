@@ -13,6 +13,7 @@ contract ValidatorSetTest is Deployer {
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
     event unsupportedPackage(uint64 indexed packageSequence, uint8 indexed channelId, bytes payload);
+    event failReasonWithStr(string message);
 
     uint256 public totalInComing;
     uint256 public burnRatio;
@@ -74,7 +75,7 @@ contract ValidatorSetTest is Deployer {
         l2pValidatorSet.deposit{ value: amount }(validator0);
 
         vm.stopPrank();
-        assertEq(l2pValidatorSet.getTurnLength(), 16);
+        assertEq(l2pValidatorSet.getTurnLength(), 1);
         bytes memory key = "turnLength";
         bytes memory value = bytes(hex"0000000000000000000000000000000000000000000000000000000000000005"); // 5
         _updateParamByGovHub(key, value, address(l2pValidatorSet));
@@ -107,7 +108,8 @@ contract ValidatorSetTest is Deployer {
 		); // 21
 
 		// Invalid: maxNumOfWorkingCandidates > maxNumOfCandidates
-		vm.expectRevert(
+		vm.expectEmit(false, false, false, true, address(govHub));
+		emit failReasonWithStr(
 			"the maxNumOfWorkingCandidates must be not greater than maxNumOfCandidates"
 		);
 		_updateParamByGovHub(key, value, address(l2pValidatorSet));
@@ -117,7 +119,15 @@ contract ValidatorSetTest is Deployer {
 			maxNumOfWorkingCandidates
 		);
 
+		key = "maxNumOfCandidates";
+		value = bytes(
+			hex"0000000000000000000000000000000000000000000000000000000000000014"
+		); // 20
+		_updateParamByGovHub(key, value, address(l2pValidatorSet));
+		assertEq(l2pValidatorSet.maxNumOfCandidates(), 20);
+
 		// Valid: set maxNumOfWorkingCandidates = 10
+		key = "maxNumOfWorkingCandidates";
 		value = bytes(
 			hex"000000000000000000000000000000000000000000000000000000000000000a"
 		); // 10
@@ -253,6 +263,11 @@ contract ValidatorSetTest is Deployer {
     }
 
     function testDistributeFinalityReward() public {
+        (, address[] memory consensusAddrs, uint64[] memory votingPowers, bytes[] memory voteAddrs) =
+            _batchCreateValidators(10);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
         address[] memory addrs = new address[](20);
         uint256[] memory weights = new uint256[](20);
         address[] memory vals = l2pValidatorSet.getValidators();
@@ -262,7 +277,7 @@ contract ValidatorSetTest is Deployer {
         }
 
         for (uint256 i = 10; i < 20; ++i) {
-            vals[i] = _getNextUserAddress();
+            addrs[i] = _getNextUserAddress();
             weights[i] = 1;
         }
 

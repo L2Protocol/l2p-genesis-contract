@@ -22,7 +22,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     uint256 private constant BLS_SIG_LENGTH = 96;
 
     address public constant DEAD_ADDRESS = address(0xdEaD);
-    uint256 public constant LOCK_AMOUNT = 1 ether;
+    uint256 public constant LOCK_AMOUNT = 3_500 ether;
     uint256 public constant REDELEGATE_FEE_RATE_BASE = 100000; // 100%
 
     uint256 public constant BREATHE_BLOCK_INTERVAL = 1 days;
@@ -258,12 +258,12 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     function initialize() external initializer onlyCoinbase onlyZeroGasPrice {
         transferGasLimit = 5000;
         minSelfDelegationL2P = 7_000_000 ether;
-        minDelegationL2PChange = 1 ether;
+        minDelegationL2PChange = 3_500 ether;
         maxElectedValidators = 45;
         unbondPeriod = 7 days;
         redelegateFeeRate = 2;
         downtimeSlashAmount = 35_000 ether;
-        felonySlashAmount = 3_500_000 ether;
+        felonySlashAmount = 700_000 ether;
         downtimeJailTime = 2 days;
         felonyJailTime = 30 days;
         maxFelonyBetweenBreatheBlock = 2;
@@ -326,7 +326,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         bytes32 monikerHash = keccak256(abi.encodePacked(description.moniker));
         if (_monikerSet[monikerHash]) revert DuplicateMoniker();
 
-        uint256 delegation = msg.value - LOCK_AMOUNT; // create validator need to lock 1 L2P
+        uint256 delegation = msg.value - LOCK_AMOUNT; // create validator need to lock 3_500 L2P
         if (delegation < minSelfDelegationL2P) revert SelfDelegationNotEnough();
 
         if (consensusAddress == address(0)) revert InvalidConsensusAddress();
@@ -750,7 +750,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         } else if (key.compareStrings("minDelegationL2PChange")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newMinDelegationL2PChange = value.bytesToUint256(32);
-            if (newMinDelegationL2PChange < 0.1 ether || newMinDelegationL2PChange > 10 ether) {
+            if (newMinDelegationL2PChange < 350 ether || newMinDelegationL2PChange > 35_000 ether) {
                 revert InvalidValue(key, value);
             }
             minDelegationL2PChange = newMinDelegationL2PChange;

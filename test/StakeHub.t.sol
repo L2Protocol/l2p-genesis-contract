@@ -307,29 +307,29 @@ contract StakeHubTest is Deployer {
         stakeHub.distributeReward{ value: reward }(consensusAddress);
 
         // 3. check shares
-        // reward: 100 ether
-        // commissionToValidator: reward(100 ether) * commissionRate(10/10000) = 0.1 ether
-        // preTotalPooledL2P: locked amount(1 ether) + selfDelegation(2000 ether) + delegation(100 ether) + (reward - commissionToValidator)(99.9 ether) = 2200.9 ether
-        // preTotalShares: locked shares(1 ether) + selfDelegation(2000 ether) + delegation(100 ether)
-        // curTotalShares: preTotalShares + commissionToValidator * preTotalShares  / preTotalPooledL2P = 2101095460947794084238
-        // curTotalPooledL2P: preTotalPooledL2P + commissionToValidator = 2201 ether
-        // expectedL2pAmount: shares(100 ether) * curTotalPooledL2P / curTotalShares
-        uint256 _totalShares = IStakeCredit(credit).totalSupply();
-        assertEq(_totalShares, 2101095460947794084238, "wrong total shares");
-        uint256 expectedL2pAmount = shares * 2201 ether / uint256(2101095460947794084238);
-        uint256 realL2pAmount = IStakeCredit(credit).getPooledL2PByShares(shares);
-        assertEq(realL2pAmount, expectedL2pAmount, "wrong L2P amount");
+        uint256 curTotalShares;
+        uint256 curTotalPooledL2P;
+        {
+            uint256 commission = reward * 10 / 10000;
+            uint256 preTotalShares = stakeHub.LOCK_AMOUNT() + selfDelegation + delegation;
+            uint256 preTotalPooledL2P = preTotalShares + (reward - commission);
+            curTotalShares = preTotalShares + commission * preTotalShares / preTotalPooledL2P;
+            curTotalPooledL2P = preTotalPooledL2P + commission;
+        }
+
+        assertEq(IStakeCredit(credit).totalSupply(), curTotalShares, "wrong total shares");
+        uint256 expectedL2pAmount = shares * curTotalPooledL2P / curTotalShares;
+        assertEq(IStakeCredit(credit).getPooledL2PByShares(shares), expectedL2pAmount, "wrong L2P amount");
 
         // 4. undelegate and submit new delegate
         vm.prank(delegator);
         stakeHub.undelegate(validator, shares);
 
-        // totalShares: 2101095460947794084238 - 100 ether = 2001095460947794084238
-        // totalPooledL2P: 2201 ether - (100 ether + 99.9 ether * 100 / 2101 ) = 2096245121370775821038
-        // newShares: 100 ether * totalShares / totalPooledL2P
-        uint256 _totalPooledL2P = IStakeCredit(credit).totalPooledL2P();
-        assertEq(_totalPooledL2P, 2096245121370775821038, "wrong total pooled L2P");
-        uint256 expectedShares = 100 ether * uint256(2001095460947794084238) / uint256(2096245121370775821038);
+        assertEq(
+            IStakeCredit(credit).totalPooledL2P(), curTotalPooledL2P - expectedL2pAmount, "wrong total pooled L2P"
+        );
+        uint256 expectedShares =
+            delegation * (curTotalShares - shares) / (curTotalPooledL2P - expectedL2pAmount);
         address newDelegator = _getNextUserAddress();
         vm.prank(newDelegator);
         stakeHub.delegate{ value: delegation }(validator, false);

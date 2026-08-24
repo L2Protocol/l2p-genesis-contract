@@ -34,16 +34,16 @@ contract L2PGovernor is
      * @dev caution:
      * INIT_VOTING_DELAY, INIT_VOTING_PERIOD and INIT_MIN_PERIOD_AFTER_QUORUM are default in number of blocks, not seconds
      */
-    uint256 private constant BLOCK_INTERVAL = 3 seconds; // TODO(Nathan): Only can be used to do initialize!
-    uint256 private constant INIT_VOTING_DELAY = 0 hours / BLOCK_INTERVAL;
-    uint256 private constant INIT_VOTING_PERIOD = 7 days / BLOCK_INTERVAL;
-    uint256 private constant INIT_PROPOSAL_THRESHOLD = 200 ether; //  = 200 L2P
+    uint256 private constant BLOCK_INTERVAL_MS = 1500;
+    uint256 private constant INIT_VOTING_DELAY = 0 hours * 1000 / BLOCK_INTERVAL_MS;
+    uint256 private constant INIT_VOTING_PERIOD = 7 days * 1000 / BLOCK_INTERVAL_MS;
+    uint256 private constant INIT_PROPOSAL_THRESHOLD = 700_000 ether; //  = 700_000 L2P
     uint256 private constant INIT_QUORUM_NUMERATOR = 10; // for >= 10%
 
-    // starting propose requires totalSupply of GovL2P >= 10000000 * 1e18
-    uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD = 10_000_000 ether;
+    // starting propose requires totalSupply of GovL2P >= 35000000 * 1e18
+    uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD = 35_000_000 ether;
     // ensures there is a minimum voting period (1 days) after quorum is reached
-    uint64 private constant INIT_MIN_PERIOD_AFTER_QUORUM = uint64(1 days / BLOCK_INTERVAL);
+    uint64 private constant INIT_MIN_PERIOD_AFTER_QUORUM = uint64(1 days * 1000 / BLOCK_INTERVAL_MS);
 
     /*----------------- errors -----------------*/
     // @notice signature: 0x584a7938
@@ -175,17 +175,23 @@ contract L2PGovernor is
         if (key.compareStrings("votingDelay")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newVotingDelay = value.bytesToUint256(32);
-            if (newVotingDelay == 0 || newVotingDelay > 24 hours) revert InvalidValue(key, value);
+            if (newVotingDelay == 0 || newVotingDelay > 24 hours * 1000 / BLOCK_INTERVAL_MS) {
+                revert InvalidValue(key, value);
+            }
             _setVotingDelay(newVotingDelay);
         } else if (key.compareStrings("votingPeriod")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newVotingPeriod = value.bytesToUint256(32);
-            if (newVotingPeriod == 0 || newVotingPeriod > 30 days) revert InvalidValue(key, value);
+            if (newVotingPeriod == 0 || newVotingPeriod > 30 days * 1000 / BLOCK_INTERVAL_MS) {
+                revert InvalidValue(key, value);
+            }
             _setVotingPeriod(newVotingPeriod);
         } else if (key.compareStrings("proposalThreshold")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newProposalThreshold = value.bytesToUint256(32);
-            if (newProposalThreshold == 0 || newProposalThreshold > 10_000 ether) revert InvalidValue(key, value);
+            if (newProposalThreshold == 0 || newProposalThreshold > 35_000_000 ether) {
+                revert InvalidValue(key, value);
+            }
             _setProposalThreshold(newProposalThreshold);
         } else if (key.compareStrings("quorumNumerator")) {
             if (value.length != 32) revert InvalidValue(key, value);
@@ -195,7 +201,9 @@ contract L2PGovernor is
         } else if (key.compareStrings("minPeriodAfterQuorum")) {
             if (value.length != 8) revert InvalidValue(key, value);
             uint64 newMinPeriodAfterQuorum = value.bytesToUint64(8);
-            if (newMinPeriodAfterQuorum == 0 || newMinPeriodAfterQuorum > 2 days) revert InvalidValue(key, value);
+            if (newMinPeriodAfterQuorum == 0 || newMinPeriodAfterQuorum > 2 days * 1000 / BLOCK_INTERVAL_MS) {
+                revert InvalidValue(key, value);
+            }
             _setLateQuorumVoteExtension(newMinPeriodAfterQuorum);
         } else if (key.compareStrings("governorProtector")) {
             if (value.length != 20) revert InvalidValue(key, value);

@@ -17,9 +17,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     using RLPDecode for *;
 
-    bytes public constant INIT_VALIDATORSET_BYTES = hex"f9016380f9015ff87394ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f98207d1b0b990452e4365ee99b1ae0bef9ade1639c45f9560a7e334abad2b802ae3b6ae53d8a613924e3d94716287438e44aef774f8739498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b8207d1b084a27e33f9a4d177ece0792106c648c1b91937782b119e06aa274485798f60bac26b1363656ecf8ecdabade91b292326f87394da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f28207d1b0ab314870c4485be98da76207e4bcbbff0e45506631966e27f9424105351f8a66c44177e1e9f58038878308eee1a3ce77";
+    bytes public constant INIT_VALIDATORSET_BYTES =
+        hex"f9016380f9015ff87394ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f98207d1b0b990452e4365ee99b1ae0bef9ade1639c45f9560a7e334abad2b802ae3b6ae53d8a613924e3d94716287438e44aef774f8739498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b8207d1b084a27e33f9a4d177ece0792106c648c1b91937782b119e06aa274485798f60bac26b1363656ecf8ecdabade91b292326f87394da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f28207d1b0ab314870c4485be98da76207e4bcbbff0e45506631966e27f9424105351f8a66c44177e1e9f58038878308eee1a3ce77";
 
-    uint256 public constant INIT_NUM_OF_CABINETS = 3;
+    uint256 public constant INIT_NUM_OF_CABINETS = 21;
 
     /*----------------- state of the contract -----------------*/
     Validator[] public currentValidatorSet;
@@ -52,7 +53,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     // BEP-126 Fast Finality
     uint256 public constant INIT_SYSTEM_REWARD_RATIO = 625; // 625/10000 is 1/16
-    uint256 public constant MAX_SYSTEM_REWARD_BALANCE = 3_500_000 ether;
+    uint256 public constant MAX_SYSTEM_REWARD_BALANCE = 350_000 ether;
 
     uint256 public systemRewardBaseRatio;
     uint256 public previousHeight;
@@ -64,19 +65,19 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     uint256 public turnLength; // Consecutive number of blocks a validator receives priority for block production
     uint256 public systemRewardAntiMEVRatio;
 
-    uint256 public constant EMISSION_POOL_TOTAL          = 50_000_000_000 ether;
+    uint256 public constant EMISSION_POOL_TOTAL = 50_000_000_000 ether;
     uint256 public constant EMISSION_RATE_PER_BLOCK_INIT = 317 ether;
     uint256 public constant EMISSION_HALVING_PERIOD_INIT = 105_192_000;
     uint256 public constant EMISSION_START_BLOCK_INIT = 21_038_400;
-    uint256 public constant EMISSION_MAX_HALVINGS_INIT   = 2;
+    uint256 public constant EMISSION_MAX_HALVINGS_INIT = 2;
 
-    uint256 public emissionRatePerBlock;  
-    uint256 public emissionHalvingPeriod; 
-    uint256 public emissionMaxHalvings;   
-    uint256 public emissionPoolRemaining; 
-    uint256 public emissionStartBlock;    
-    uint256 public emissionLastBlock;     
-    uint256 public totalEmitted;          
+    uint256 public emissionRatePerBlock;
+    uint256 public emissionHalvingPeriod;
+    uint256 public emissionMaxHalvings;
+    uint256 public emissionPoolRemaining;
+    uint256 public emissionStartBlock;
+    uint256 public emissionLastBlock;
+    uint256 public totalEmitted;
 
     struct Validator {
         address consensusAddress;
@@ -143,25 +144,28 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
     event emissionDistributed(uint256 epochEmission, uint256 poolRemaining);
-    
+
     /*----------------- init -----------------*/
     function init() external onlyNotInit {
-        (ValidatorSetPackage memory validatorSetPkg, bool valid) =
-            decodeValidatorSet(INIT_VALIDATORSET_BYTES);
+        (ValidatorSetPackage memory validatorSetPkg, bool valid) = decodeValidatorSet(INIT_VALIDATORSET_BYTES);
         require(valid, "failed to parse init validatorSet");
         for (uint256 i; i < validatorSetPkg.validatorSet.length; ++i) {
             currentValidatorSet.push(validatorSetPkg.validatorSet[i]);
             currentValidatorSetMap[validatorSetPkg.validatorSet[i].consensusAddress] = i + 1;
         }
 
-        require(address(this).balance == EMISSION_POOL_TOTAL, "emission pool genesis balance mismatch");
+        require(address(this).balance >= EMISSION_POOL_TOTAL, "emission pool genesis balance too low");
 
-        emissionRatePerBlock  = EMISSION_RATE_PER_BLOCK_INIT;
+        emissionRatePerBlock = EMISSION_RATE_PER_BLOCK_INIT;
         emissionHalvingPeriod = EMISSION_HALVING_PERIOD_INIT;
-        emissionMaxHalvings   = EMISSION_MAX_HALVINGS_INIT;
+        emissionMaxHalvings = EMISSION_MAX_HALVINGS_INIT;
         emissionPoolRemaining = EMISSION_POOL_TOTAL;
-        emissionStartBlock    = EMISSION_START_BLOCK_INIT;
-        emissionLastBlock     = EMISSION_START_BLOCK_INIT;
+        emissionStartBlock = EMISSION_START_BLOCK_INIT;
+        emissionLastBlock = EMISSION_START_BLOCK_INIT;
+
+        numOfCabinets = INIT_NUM_OF_CABINETS;
+        maxNumOfMaintaining = INIT_MAX_NUM_OF_MAINTAINING;
+        maintainSlashScale = INIT_MAINTAIN_SLASH_SCALE;
 
         alreadyInit = true;
     }
@@ -233,7 +237,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
      *
      * @param valAddr The validator address who produced the current block
      */
-    function deposit(address valAddr) external payable onlyCoinbase onlyInit noEmptyDeposit onlyZeroGasPrice {
+    function deposit(
+        address valAddr
+    ) external payable onlyCoinbase onlyInit noEmptyDeposit onlyZeroGasPrice {
         uint256 value = msg.value;
         uint256 index = currentValidatorSetMap[valAddr];
 
@@ -443,7 +449,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     /**
      * @notice Return the current incoming of the validator
      */
-    function getIncoming(address validator) external view returns (uint256) {
+    function getIncoming(
+        address validator
+    ) external view returns (uint256) {
         uint256 index = currentValidatorSetMap[validator];
         if (index <= 0) {
             return 0;
@@ -456,7 +464,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
      *
      * @param index The index of the validator in `currentValidatorSet`(from 0 to `currentValidatorSet.length-1`)
      */
-    function isWorkingValidator(uint256 index) public view returns (bool) {
+    function isWorkingValidator(
+        uint256 index
+    ) public view returns (bool) {
         if (index >= currentValidatorSet.length) {
             return false;
         }
@@ -473,7 +483,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
      * @notice Return whether the validator is a working validator(not jailed or maintaining) by consensus address
      * Will return false if the validator is not in `currentValidatorSet`
      */
-    function isCurrentValidator(address validator) external view override returns (bool) {
+    function isCurrentValidator(
+        address validator
+    ) external view override returns (bool) {
         uint256 index = currentValidatorSetMap[validator];
         if (index <= 0) {
             return false;
@@ -487,7 +499,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     /**
      * @notice Return the index of the validator in `currentValidatorSet`(from 0 to `currentValidatorSet.length-1`)
      */
-    function getCurrentValidatorIndex(address validator) public view returns (uint256) {
+    function getCurrentValidatorIndex(
+        address validator
+    ) public view returns (uint256) {
         uint256 index = currentValidatorSetMap[validator];
         require(index > 0, "only current validators");
 
@@ -511,14 +525,18 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     }
 
     /*----------------- For slash -----------------*/
-    function misdemeanor(address validator) external override onlySlash initValidatorExtraSet {
+    function misdemeanor(
+        address validator
+    ) external override onlySlash initValidatorExtraSet {
         uint256 validatorIndex = _misdemeanor(validator);
         if (canEnterMaintenance(validatorIndex)) {
             _enterMaintenance(validator, validatorIndex);
         }
     }
 
-    function felony(address validator) external override initValidatorExtraSet {
+    function felony(
+        address validator
+    ) external override initValidatorExtraSet {
         require(msg.sender == SLASH_CONTRACT_ADDR || msg.sender == STAKE_HUB_ADDR, "only slash or stakeHub contract");
 
         uint256 index = currentValidatorSetMap[validator];
@@ -538,7 +556,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     /**
      * @notice Return whether the validator at index could enter maintenance
      */
-    function canEnterMaintenance(uint256 index) public view returns (bool) {
+    function canEnterMaintenance(
+        uint256 index
+    ) public view returns (bool) {
         if (index >= currentValidatorSet.length) {
             return false;
         }
@@ -549,8 +569,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
                 || numOfMaintaining >= maxNumOfMaintaining // - 2. check if reached upper limit
                 || !isWorkingValidator(index) // - 3. check if not working(not jailed and not maintaining)
                 || validatorExtraSet[index].enterMaintenanceHeight > 0 // - 5. check if has Maintained during current 24-hour period
-                    // current validators are selected every 24 hours(from 00:00:00 UTC to 23:59:59 UTC)
-                || getValidators().length <= 1 // - 6. check num of remaining working validators
+                || 
+                // current validators are selected every 24 hours(from 00:00:00 UTC to 23:59:59 UTC)
+                getValidators().length <= 1 // - 6. check num of remaining working validators
         ) {
             return false;
         }
@@ -588,7 +609,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     }
 
     /*----------------- Param update -----------------*/
-    function updateParam(string calldata key, bytes calldata value) external override onlyInit onlyGov {
+    function updateParam(
+        string calldata key,
+        bytes calldata value
+    ) external override onlyInit onlyGov {
         if (Memory.compareStrings(key, "burnRatio")) {
             require(value.length == 32, "length of burnRatio mismatch");
             uint256 newBurnRatio = BytesToTypes.bytesToUint256(32, value);
@@ -667,7 +691,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         } else if (Memory.compareStrings(key, "emissionRatePerBlock")) {
             require(value.length == 32, "length of emissionRatePerBlock mismatch");
             uint256 newRate = BytesToTypes.bytesToUint256(32, value);
-            require(newRate <= 10_000 ether, "emissionRatePerBlock too high");
+            require(newRate <= EMISSION_RATE_PER_BLOCK_INIT, "emissionRatePerBlock too high");
             emissionRatePerBlock = newRate;
         } else if (Memory.compareStrings(key, "emissionHalvingPeriod")) {
             require(value.length == 32, "length of emissionHalvingPeriod mismatch");
@@ -688,31 +712,33 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     /*----------------- Internal Functions -----------------*/
 
     function _accrueEmission() private {
-        if (emissionPoolRemaining == 0 || emissionLastBlock >= block.number) {
+        if (emissionPoolRemaining == 0) {
             return;
         }
 
-        if (block.number <= emissionStartBlock) {
-            return;
-        }        
-
-        uint256 elapsed = block.number - emissionLastBlock;
-        emissionLastBlock = block.number;
-
-        uint256 window = (block.number - emissionStartBlock) / emissionHalvingPeriod;
-        if (window >= emissionMaxHalvings) {
+        uint256 fromBlock = emissionLastBlock;
+        if (block.number <= fromBlock || block.number <= emissionStartBlock) {
             return;
         }
 
-        uint256 rate = emissionRatePerBlock >> window;
-        uint256 epochEmission = rate.mul(elapsed);
+        uint256 epochEmission;
+        uint256 cursor = fromBlock;
+        while (cursor < block.number) {
+            uint256 window = (cursor - emissionStartBlock) / emissionHalvingPeriod;
+            if (window >= emissionMaxHalvings) {
+                break;
+            }
+            uint256 windowEnd = emissionStartBlock + (window + 1).mul(emissionHalvingPeriod);
+            uint256 segmentEnd = windowEnd < block.number ? windowEnd : block.number;
+            epochEmission = epochEmission.add((emissionRatePerBlock >> window).mul(segmentEnd - cursor));
+            cursor = segmentEnd;
+        }
+
         if (epochEmission > emissionPoolRemaining) {
             epochEmission = emissionPoolRemaining;
         }
 
-        uint256 availablePool = address(this).balance > totalInComing
-            ? address(this).balance - totalInComing
-            : 0;
+        uint256 availablePool = address(this).balance > totalInComing ? address(this).balance - totalInComing : 0;
         if (epochEmission > availablePool) {
             epochEmission = availablePool;
         }
@@ -725,7 +751,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         uint256 lastActive;
         uint256 n = currentValidatorSet.length;
         for (uint256 i; i < n; ++i) {
-            if (!currentValidatorSet[i].jailed) {
+            if (isWorkingValidator(i)) {
                 totalVotingPower = totalVotingPower.add(currentValidatorSet[i].votingPower);
                 lastActive = i;
             }
@@ -735,10 +761,12 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             return;
         }
 
+        emissionLastBlock = block.number;
+
         uint256 distributed;
 
         for (uint256 i; i < n; ++i) {
-            if (!currentValidatorSet[i].jailed) {
+            if (isWorkingValidator(i)) {
                 uint256 share;
                 if (i == lastActive) {
                     share = epochEmission.sub(distributed);
@@ -756,7 +784,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         emit emissionDistributed(epochEmission, emissionPoolRemaining);
     }
 
-    function doUpdateState(Validator[] memory newValidatorSet, bytes[] memory newVoteAddrs) private {
+    function doUpdateState(
+        Validator[] memory newValidatorSet,
+        bytes[] memory newVoteAddrs
+    ) private {
         uint256 n = currentValidatorSet.length;
         uint256 m = newValidatorSet.length;
 
@@ -855,12 +886,17 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
      *
      * Vote address is not considered
      */
-    function isSameValidator(Validator memory v1, Validator memory v2) private pure returns (bool) {
+    function isSameValidator(
+        Validator memory v1,
+        Validator memory v2
+    ) private pure returns (bool) {
         return v1.consensusAddress == v2.consensusAddress && v1.feeAddress == v2.feeAddress
             && v1.BBCFeeAddress == v2.BBCFeeAddress;
     }
 
-    function getVoteAddresses(address[] memory validators) internal view returns (bytes[] memory) {
+    function getVoteAddresses(
+        address[] memory validators
+    ) internal view returns (bytes[] memory) {
         uint256 n = currentValidatorSet.length;
         uint256 length = validators.length;
         bytes[] memory voteAddrs = new bytes[](length);
@@ -931,7 +967,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         }
     }
 
-    function isMonitoredForMaliciousVote(bytes calldata voteAddr) external view override returns (bool) {
+    function isMonitoredForMaliciousVote(
+        bytes calldata voteAddr
+    ) external view override returns (bool) {
         uint256 m = currentVoteAddrFullSet.length;
         for (uint256 i; i < m; ++i) {
             if (BytesLib.equal(voteAddr, currentVoteAddrFullSet[i])) {
@@ -949,7 +987,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         return false;
     }
 
-    function _misdemeanor(address validator) private returns (uint256) {
+    function _misdemeanor(
+        address validator
+    ) private returns (uint256) {
         uint256 index = currentValidatorSetMap[validator];
         if (index <= 0) {
             return ~uint256(0);
@@ -981,7 +1021,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         return index;
     }
 
-    function _felony(address validator, uint256 index) private returns (bool) {
+    function _felony(
+        address validator,
+        uint256 index
+    ) private returns (bool) {
         uint256 income = currentValidatorSet[index].incoming;
         uint256 rest = currentValidatorSet.length - 1;
         if (getValidators().length <= 1) {
@@ -1093,7 +1136,10 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         return (unjailedValidatorSet, unjailedVoteAddrs);
     }
 
-    function _enterMaintenance(address validator, uint256 index) private {
+    function _enterMaintenance(
+        address validator,
+        uint256 index
+    ) private {
         ++numOfMaintaining;
         validatorExtraSet[index].isMaintaining = true;
         validatorExtraSet[index].enterMaintenanceHeight = block.number;
@@ -1136,11 +1182,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         emit validatorExitMaintenance(validator);
     }
 
-    function decodeValidatorSet(bytes memory msgBytes)
-        internal
-        pure
-        returns (ValidatorSetPackage memory, bool)
-    {
+    function decodeValidatorSet(
+        bytes memory msgBytes
+    ) internal pure returns (ValidatorSetPackage memory, bool) {
         ValidatorSetPackage memory validatorSetPkg;
 
         RLPDecode.Iterator memory iter = msgBytes.toRLPItem().iterator();
@@ -1170,11 +1214,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         return (validatorSetPkg, success);
     }
 
-    function decodeValidator(RLPDecode.RLPItem memory itemValidator)
-        internal
-        pure
-        returns (Validator memory, bytes memory, bool)
-    {
+    function decodeValidator(
+        RLPDecode.RLPItem memory itemValidator
+    ) internal pure returns (Validator memory, bytes memory, bool) {
         Validator memory validator;
         bytes memory voteAddr;
         RLPDecode.Iterator memory iter = itemValidator.iterator();

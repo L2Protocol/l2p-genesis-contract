@@ -67,7 +67,7 @@ contract EmissionScheduleTest is Deployer {
 
     /*----------------- init -----------------*/
 
-    function testInitRequiresExactEmissionPoolGenesisBalance() public {
+    function testInitRequiresAtLeastEmissionPoolGenesisBalance() public {
         address freshAddr = address(0xEA51F00D);
         bytes memory code = vm.getDeployedCode("L2PValidatorSet.sol:L2PValidatorSet");
         vm.etch(freshAddr, code);
@@ -75,14 +75,14 @@ contract EmissionScheduleTest is Deployer {
 
         assertFalse(fresh.alreadyInit());
 
-        vm.expectRevert(bytes("emission pool genesis balance mismatch"));
+        vm.expectRevert(bytes("emission pool genesis balance too low"));
         fresh.init();
 
         vm.deal(freshAddr, fresh.EMISSION_POOL_TOTAL() - 1);
-        vm.expectRevert(bytes("emission pool genesis balance mismatch"));
+        vm.expectRevert(bytes("emission pool genesis balance too low"));
         fresh.init();
 
-        vm.deal(freshAddr, fresh.EMISSION_POOL_TOTAL());
+        vm.deal(freshAddr, fresh.EMISSION_POOL_TOTAL() + 1 ether);
         fresh.init();
 
         assertTrue(fresh.alreadyInit());
@@ -93,6 +93,9 @@ contract EmissionScheduleTest is Deployer {
         assertEq(fresh.emissionStartBlock(), fresh.EMISSION_START_BLOCK_INIT());
         assertEq(fresh.emissionLastBlock(), fresh.EMISSION_START_BLOCK_INIT());
         assertEq(fresh.totalEmitted(), 0);
+        assertEq(fresh.numOfCabinets(), fresh.INIT_NUM_OF_CABINETS());
+        assertEq(fresh.maxNumOfMaintaining(), fresh.INIT_MAX_NUM_OF_MAINTAINING());
+        assertEq(fresh.maintainSlashScale(), fresh.INIT_MAINTAIN_SLASH_SCALE());
 
         vm.expectRevert(bytes("the contract already init"));
         fresh.init();
@@ -217,7 +220,7 @@ contract EmissionScheduleTest is Deployer {
             rate: 800 ether,
             halvingPeriod: 100,
             maxHalvings: 2,
-            poolRemaining: 100_000 ether,
+            poolRemaining: 1_000_000 ether,
             startBlock: startBlock,
             lastBlock: startBlock
         });
@@ -226,28 +229,29 @@ contract EmissionScheduleTest is Deployer {
         vm.roll(startBlock + 50);
         uint256 epoch0 = 800 ether * 50;
         vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
-        emit emissionDistributed(epoch0, 100_000 ether - epoch0);
+        emit emissionDistributed(epoch0, 1_000_000 ether - epoch0);
         vm.prank(coinbase);
         l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
         assertEq(l2pValidatorSet.totalEmitted(), epoch0);
 
         // window 1: rate halved
         vm.roll(startBlock + 150);
-        uint256 epoch1 = 400 ether * 100;
+        uint256 epoch1 = 800 ether * 50 + 400 ether * 50;
         vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
-        emit emissionDistributed(epoch1, 100_000 ether - epoch0 - epoch1);
+        emit emissionDistributed(epoch1, 1_000_000 ether - epoch0 - epoch1);
         vm.prank(coinbase);
         l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
         assertEq(l2pValidatorSet.totalEmitted(), epoch0 + epoch1);
 
-        // window 2 == maxHalvings: emission permanently stops
-        uint256 poolBeforeCutoff = l2pValidatorSet.emissionPoolRemaining();
-        uint256 emittedBeforeCutoff = l2pValidatorSet.totalEmitted();
+        uint256 tailEmission = 400 ether * 50;
         vm.roll(startBlock + 250);
         vm.prank(coinbase);
         l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
-        assertEq(l2pValidatorSet.emissionPoolRemaining(), poolBeforeCutoff);
-        assertEq(l2pValidatorSet.totalEmitted(), emittedBeforeCutoff);
+        assertEq(l2pValidatorSet.totalEmitted(), epoch0 + epoch1 + tailEmission);
+
+        // window 2 == maxHalvings: emission permanently stops
+        uint256 poolBeforeCutoff = l2pValidatorSet.emissionPoolRemaining();
+        uint256 emittedBeforeCutoff = l2pValidatorSet.totalEmitted();
 
         // and it stays stopped even further out
         vm.roll(startBlock + 10_000);
@@ -412,16 +416,22 @@ contract EmissionScheduleTest is Deployer {
     // `failReasonWithStr` on failure rather than reverting, so invalid updates are
     // asserted by checking the value is left unchanged (matching GovHub's own behavior).
     function testEmissionParamGovernanceBounds() public {
-        bytes memory key = "emissionRatePerBlock";
-        bytes memory value = abi.encode(uint256(500 ether));
-        _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.emissionRatePerBlock(), 500 ether);
+        uint256 initRate = l2pValidatorSet.EMISSION_RATE_PER_BLOCK_INIT();
 
-        value = abi.encode(uint256(10_001 ether));
+        bytes memory key = "emissionRatePerBlock";
+        bytes memory value = abi.encode(initRate);
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionRatePerBlock(), initRate);
+
+        value = abi.encode(uint256(200 ether));
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionRatePerBlock(), 200 ether);
+
+        value = abi.encode(initRate + 1);
         vm.expectEmit(false, false, false, true, address(govHub));
         emit failReasonWithStr("emissionRatePerBlock too high");
         _updateParamByGovHub(key, value, address(l2pValidatorSet));
-        assertEq(l2pValidatorSet.emissionRatePerBlock(), 500 ether);
+        assertEq(l2pValidatorSet.emissionRatePerBlock(), 200 ether);
 
         key = "emissionHalvingPeriod";
         value = abi.encode(uint256(2_000_000));

@@ -134,7 +134,7 @@ def generate_governor(
         os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
     )
 
-    replace_parameter(contract, "uint256 private constant BLOCK_INTERVAL", f"{block_interval}")
+    replace_parameter(contract, "uint256 private constant BLOCK_INTERVAL_MS", f"{block_interval}")
     replace_parameter(contract, "uint256 private constant INIT_VOTING_DELAY", f"{init_voting_delay}")
     replace_parameter(contract, "uint256 private constant INIT_VOTING_PERIOD", f"{init_voting_period}")
     replace_parameter(contract, "uint256 private constant INIT_PROPOSAL_THRESHOLD", f"{init_proposal_threshold}")
@@ -173,7 +173,10 @@ def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
     )
 
     replace_parameter(contract, "uint256 public constant INIT_BURN_RATIO", f"{init_burn_ratio}")
-    replace_parameter(contract, "bytes public constant INIT_VALIDATORSET_BYTES", f"hex\"{init_validator_set_bytes}\"")
+    replace(
+        contract, r"bytes public constant INIT_VALIDATORSET_BYTES =[^;]*;",
+        f"bytes public constant INIT_VALIDATORSET_BYTES =\n        hex\"{init_validator_set_bytes}\";"
+    )
 
     if network == "dev":
         insert(
@@ -213,29 +216,26 @@ def mainnet():
     # mainnet init data
     init_burn_ratio = "1000"
     init_validator_set_bytes = "f9016380f9015ff87394ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f994ae11fb1f89c83c3ad49636a283732a3692de76f98207d1b0b990452e4365ee99b1ae0bef9ade1639c45f9560a7e334abad2b802ae3b6ae53d8a613924e3d94716287438e44aef774f8739498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b9498803ed812d591b5dcc319652645036b6ca32d1b8207d1b084a27e33f9a4d177ece0792106c648c1b91937782b119e06aa274485798f60bac26b1363656ecf8ecdabade91b292326f87394da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f294da209d1508a1680be75751d0a9923d74997d90f28207d1b0ab314870c4485be98da76207e4bcbbff0e45506631966e27f9424105351f8a66c44177e1e9f58038878308eee1a3ce77"
-    source_chain_id = "Binance-Chain-Tigris"
 
-    block_interval = "3 seconds"
+    block_interval = "1500"
     breathe_block_interval = "1 days"
     max_elected_validators = "45"
     unbond_period = "7 days"
     downtime_jail_time = "2 days"
     felony_jail_time = "30 days"
-    init_felony_slash_scope = "28800"
+    init_felony_slash_scope = "57600"
     misdemeanor_threshold = "50"
     felony_threshold = "150"
-    init_voting_delay = "0 hours / BLOCK_INTERVAL"
-    init_voting_period = "7 days / BLOCK_INTERVAL"
-    init_proposal_threshold = "200 ether"
+    init_voting_delay = "0 hours * 1000 / BLOCK_INTERVAL_MS"
+    init_voting_period = "7 days * 1000 / BLOCK_INTERVAL_MS"
+    init_proposal_threshold = "700_000 ether"
     init_quorum_numerator = "10"
-    propose_start_threshold = "10_000_000 ether"
-    init_min_period_after_quorum = "uint64(1 days / BLOCK_INTERVAL)"
+    propose_start_threshold = "35_000_000 ether"
+    init_min_period_after_quorum = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)"
     init_minimal_delay = "24 hours"
-    lock_period_for_token_recover = "7 days"
 
     stake_hub_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
     governor_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
-    token_recover_portal_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
 
     generate_system()
     generate_gov_hub()
@@ -265,29 +265,26 @@ def testnet():
     # testnet init data
     init_burn_ratio = "1000"
     init_validator_set_bytes = "f901a880f901a4f844941284214b9b9c85549ab3d2b972df0deef66ac2c9946ddf42a51534fc98d0c0a3b42c963cace8441ddf946ddf42a51534fc98d0c0a3b42c963cace8441ddf8410000000f84494a2959d3f95eae5dc7d70144ce1b73b403b7eb6e0948081ef03f1d9e0bb4a5bf38f16285c879299f07f948081ef03f1d9e0bb4a5bf38f16285c879299f07f8410000000f8449435552c16704d214347f29fa77f77da6d75d7c75294dc4973e838e3949c77aced16ac2315dc2d7ab11194dc4973e838e3949c77aced16ac2315dc2d7ab1118410000000f84494980a75ecd1309ea12fa2ed87a8744fbfc9b863d594cc6ac05c95a99c1f7b5f88de0e3486c82293b27094cc6ac05c95a99c1f7b5f88de0e3486c82293b2708410000000f84494f474cf03cceff28abc65c9cbae594f725c80e12d94e61a183325a18a173319dd8e19c8d069459e217594e61a183325a18a173319dd8e19c8d069459e21758410000000f84494b71b214cb885500844365e95cd9942c7276e7fd894d22ca3ba2141d23adab65ce4940eb7665ea2b6a794d22ca3ba2141d23adab65ce4940eb7665ea2b6a78410000000"
-    source_chain_id = "Binance-Chain-Ganges"
 
-    block_interval = "3 seconds"
+    block_interval = "1500"
     breathe_block_interval = "1 days"
     max_elected_validators = "9"
     unbond_period = "7 days"
     downtime_jail_time = "2 days"
     felony_jail_time = "5 days"
-    init_felony_slash_scope = "28800"
+    init_felony_slash_scope = "57600"
     misdemeanor_threshold = "50"
     felony_threshold = "150"
-    init_voting_delay = "0 hours / BLOCK_INTERVAL"
-    init_voting_period = "1 days / BLOCK_INTERVAL"
-    init_proposal_threshold = "100 ether"
+    init_voting_delay = "0 hours * 1000 / BLOCK_INTERVAL_MS"
+    init_voting_period = "1 days * 1000 / BLOCK_INTERVAL_MS"
+    init_proposal_threshold = "350_000 ether"
     init_quorum_numerator = "10"
-    propose_start_threshold = "10_000_000 ether"
-    init_min_period_after_quorum = "uint64(1 hours / BLOCK_INTERVAL)"
+    propose_start_threshold = "35_000_000 ether"
+    init_min_period_after_quorum = "uint64(1 hours * 1000 / BLOCK_INTERVAL_MS)"
     init_minimal_delay = "6 hours"
-    lock_period_for_token_recover = "300 seconds"
 
     stake_hub_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
     governor_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
-    token_recover_portal_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
 
     generate_system()
     generate_gov_hub()
@@ -311,29 +308,31 @@ def testnet():
 def dev(
     dev_chain_id: int = 714,
     init_burn_ratio: Annotated[str, typer.Option(help="init burn ratio of L2pValidatorSet")] = "1000",
-    source_chain_id: Annotated[
-        str, typer.Option(help="source chain id of the token recover portal")] = "Binance-Chain-Ganges",
     stake_hub_protector: Annotated[str, typer.Option(help="assetProtector of StakeHub")] = "address(0xdEaD)",
     governor_protector: Annotated[str, typer.Option(help="governorProtector of L2PGovernor")] = "address(0xdEaD)",
-    block_interval: Annotated[str, typer.Option(help="block interval of Parlia")] = "3 seconds",
+    block_interval: Annotated[str, typer.Option(help="block interval of Parlia, in milliseconds")] = "1500",
     breathe_block_interval: Annotated[str, typer.Option(help="breath block interval of Parlia")] = "1 days",
     max_elected_validators: Annotated[str, typer.Option(help="maxElectedValidators of StakeHub")] = "45",
     unbond_period: Annotated[str, typer.Option(help="unbondPeriod of StakeHub")] = "7 days",
     downtime_jail_time: Annotated[str, typer.Option(help="downtimeJailTime of StakeHub")] = "2 days",
     felony_jail_time: Annotated[str, typer.Option(help="felonyJailTime of StakeHub")] = "30 days",
-    init_felony_slash_scope: str = "28800",
+    init_felony_slash_scope: str = "57600",
     misdemeanor_threshold: str = "50",
     felony_threshold: str = "150",
-    init_voting_delay: Annotated[str,
-                                 typer.Option(help="INIT_VOTING_DELAY of L2PGovernor")] = "0 hours / BLOCK_INTERVAL",
-    init_voting_period: Annotated[str,
-                                  typer.Option(help="INIT_VOTING_PERIOD of L2PGovernor")] = "7 days / BLOCK_INTERVAL",
-    init_proposal_threshold: Annotated[str, typer.Option(help="INIT_PROPOSAL_THRESHOLD of L2PGovernor")] = "200 ether",
+    init_voting_delay: Annotated[
+        str,
+        typer.Option(help="INIT_VOTING_DELAY of L2PGovernor")] = "0 hours * 1000 / BLOCK_INTERVAL_MS",
+    init_voting_period: Annotated[
+        str,
+        typer.Option(help="INIT_VOTING_PERIOD of L2PGovernor")] = "7 days * 1000 / BLOCK_INTERVAL_MS",
+    init_proposal_threshold: Annotated[
+        str, typer.Option(help="INIT_PROPOSAL_THRESHOLD of L2PGovernor")] = "700_000 ether",
     init_quorum_numerator: Annotated[str, typer.Option(help="INIT_QUORUM_NUMERATOR of L2PGovernor")] = "10",
     propose_start_threshold: Annotated[
-        str, typer.Option(help="PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD of L2PGovernor")] = "10_000_000 ether",
+        str, typer.Option(help="PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD of L2PGovernor")] = "35_000_000 ether",
     init_min_period_after_quorum: Annotated[
-        str, typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days / BLOCK_INTERVAL)",
+        str,
+        typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)",
     init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours"
 ):
     global network, chain_id, hex_chain_id

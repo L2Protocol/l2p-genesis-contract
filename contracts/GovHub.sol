@@ -16,12 +16,18 @@ contract GovHub is System {
         address target;
     }
 
-    function updateParam(string calldata key, bytes calldata value, address target) external onlyGovernorTimelock {
+    function updateParam(
+        string calldata key,
+        bytes calldata value,
+        address target
+    ) external onlyGovernorTimelock {
         ParamChangePackage memory proposal = ParamChangePackage(key, value, target);
         notifyUpdates(proposal);
     }
 
-    function notifyUpdates(ParamChangePackage memory proposal) internal returns (uint32) {
+    function notifyUpdates(
+        ParamChangePackage memory proposal
+    ) internal returns (uint32) {
         if (!isContract(proposal.target)) {
             emit failReasonWithStr("the target is not a contract");
             return ERROR_TARGET_NOT_CONTRACT;

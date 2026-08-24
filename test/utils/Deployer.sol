@@ -91,6 +91,32 @@ contract Deployer is Test {
 
         relayer = payable(0xb005741528b86F5952469d80A8614591E3c5B632); // whitelabel relayer on mainnet
         vm.label(relayer, "relayer");
+
+        _mirrorGenesisValidatorSetParams();
+    }
+
+    function _mirrorGenesisValidatorSetParams() internal {
+        if (l2pValidatorSet.numOfCabinets() == 0) {
+            _updateParamByGovHub(
+                "numOfCabinets",
+                abi.encodePacked(l2pValidatorSet.INIT_NUM_OF_CABINETS()),
+                address(l2pValidatorSet)
+            );
+        }
+        if (l2pValidatorSet.maxNumOfMaintaining() == 0) {
+            _updateParamByGovHub(
+                "maxNumOfMaintaining",
+                abi.encodePacked(l2pValidatorSet.INIT_MAX_NUM_OF_MAINTAINING()),
+                address(l2pValidatorSet)
+            );
+        }
+        if (l2pValidatorSet.maintainSlashScale() == 0) {
+            _updateParamByGovHub(
+                "maintainSlashScale",
+                abi.encodePacked(l2pValidatorSet.INIT_MAINTAIN_SLASH_SCALE()),
+                address(l2pValidatorSet)
+            );
+        }
     }
 
     function _getNextUserAddress() internal returns (address payable) {
