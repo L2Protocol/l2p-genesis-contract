@@ -774,7 +774,7 @@ contract StakeHub is SystemV2, Initializable, Protectable {
         } else if (key.compareStrings("downtimeSlashAmount")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newDowntimeSlashAmount = value.bytesToUint256(32);
-            if (newDowntimeSlashAmount < 1 ether || newDowntimeSlashAmount >= felonySlashAmount) {
+            if (newDowntimeSlashAmount < 3500 ether || newDowntimeSlashAmount >= felonySlashAmount) {
                 revert InvalidValue(key, value);
             }
             downtimeSlashAmount = newDowntimeSlashAmount;
