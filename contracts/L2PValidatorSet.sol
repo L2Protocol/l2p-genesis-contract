@@ -180,7 +180,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         address[] memory _consensusAddrs,
         uint64[] memory _votingPowers,
         bytes[] memory _voteAddrs
-    ) public onlyCoinbase onlyZeroGasPrice initValidatorExtraSet {
+    ) public onlyCoinbase onlyInit onlyZeroGasPrice initValidatorExtraSet {
         uint256 _length = _consensusAddrs.length;
         Validator[] memory _validatorSet = new Validator[](_length);
         for (uint256 i; i < _length; ++i) {
@@ -194,15 +194,16 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             });
         }
 
-        // step 0: force all maintaining validators to exit `Temporary Maintenance`
+        // step 0: accrue emission into each active validator's incoming (stake-proportional).
+        // must run before the maintenance exit below, which clears the isMaintaining flags
+        _accrueEmission();
+
+        // step 1a: force all maintaining validators to exit `Temporary Maintenance`
         // - 1. validators exit maintenance
         // - 2. clear all maintainInfo
         // - 3. get unjailed validators from validatorSet
         (Validator[] memory validatorSetTemp, bytes[] memory voteAddrsTemp) =
             _forceMaintainingValidatorsExit(_validatorSet, _voteAddrs);
-
-        // step 1a: accrue emission into each active validator's incoming (stake-proportional)
-        _accrueEmission();
 
         // step 1b: distribute incoming (gas fees + emission)
         for (uint256 i; i < currentValidatorSet.length; ++i) {
@@ -696,7 +697,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         } else if (Memory.compareStrings(key, "emissionHalvingPeriod")) {
             require(value.length == 32, "length of emissionHalvingPeriod mismatch");
             uint256 newPeriod = BytesToTypes.bytesToUint256(32, value);
-            require(newPeriod >= 1_000_000, "emissionHalvingPeriod too short");
+            require(newPeriod >= 1_000_000 && newPeriod <= 1_000_000_000_000, "emissionHalvingPeriod out of range");
             emissionHalvingPeriod = newPeriod;
         } else if (Memory.compareStrings(key, "emissionMaxHalvings")) {
             require(value.length == 32, "length of emissionMaxHalvings mismatch");

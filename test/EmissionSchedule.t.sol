@@ -101,6 +101,75 @@ contract EmissionScheduleTest is Deployer {
         fresh.init();
     }
 
+    function testUpdateValidatorSetBeforeInitCannotDrainThePool() public {
+        address freshAddr = address(0xEA51F00E);
+        vm.etch(freshAddr, vm.getDeployedCode("L2PValidatorSet.sol:L2PValidatorSet"));
+        L2PValidatorSet fresh = L2PValidatorSet(payable(freshAddr));
+        vm.deal(freshAddr, fresh.EMISSION_POOL_TOTAL());
+
+        assertFalse(fresh.alreadyInit());
+
+        address[] memory consensusAddrs = new address[](0);
+        uint64[] memory votingPowers = new uint64[](0);
+        bytes[] memory voteAddrs = new bytes[](0);
+
+        // before init emissionPoolRemaining is still zero, so an unguarded dust sweep would
+        // hand the entire emission pool to SystemReward
+        vm.prank(coinbase);
+        vm.expectRevert(bytes("the contract not init yet"));
+        fresh.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(freshAddr.balance, fresh.EMISSION_POOL_TOTAL());
+    }
+
+    function testEmissionAccountingStaysBalancedAcrossEpochs() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(3);
+
+        uint256 pool = 1_000_000 ether;
+        uint256 startBlock = block.number;
+        _setEmissionState({
+            rate: 700 ether,
+            halvingPeriod: 1_000,
+            maxHalvings: 3,
+            poolRemaining: pool,
+            startBlock: startBlock,
+            lastBlock: startBlock
+        });
+
+        uint256 paidToValidators;
+        for (uint256 i = 1; i <= 6; ++i) {
+            vm.roll(startBlock + i * 400);
+
+            uint256[] memory before = new uint256[](3);
+            for (uint256 j; j < 3; ++j) {
+                before[j] = _pooled(operatorAddrs[j]);
+            }
+
+            vm.prank(coinbase);
+            l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+            for (uint256 j; j < 3; ++j) {
+                paidToValidators += _pooled(operatorAddrs[j]) - before[j];
+            }
+
+            // nothing is created or lost: what left the pool is exactly what was booked as emitted
+            assertEq(
+                l2pValidatorSet.emissionPoolRemaining() + l2pValidatorSet.totalEmitted(),
+                pool,
+                "pool and totalEmitted no longer sum to the starting pool"
+            );
+        }
+
+        // every emitted L2P reached a validator's credit contract
+        assertEq(paidToValidators, l2pValidatorSet.totalEmitted(), "emitted amount did not reach validators");
+        assertGt(l2pValidatorSet.totalEmitted(), 0);
+    }
+
     /*----------------- accrual -----------------*/
 
     function testEmissionNotAccruedBeforeStartBlock() public {
@@ -377,6 +446,43 @@ contract EmissionScheduleTest is Deployer {
         assertEq(l2pValidatorSet.totalEmitted(), expectedEmission);
     }
 
+    function testEmissionSkipsMaintainingValidators() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(2);
+
+        uint256 idx0 = l2pValidatorSet.getCurrentValidatorIndex(consensusAddrs[0]);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.enterMaintenance();
+        assertFalse(l2pValidatorSet.isWorkingValidator(idx0), "validator 0 should be maintaining");
+
+        uint256 startBlock = block.number;
+        _setEmissionState({
+            rate: 100 ether,
+            halvingPeriod: 1_000_000,
+            maxHalvings: 5,
+            poolRemaining: 1_000_000 ether,
+            startBlock: startBlock,
+            lastBlock: startBlock
+        });
+
+        vm.roll(startBlock + 10);
+        uint256 expectedEmission = 100 ether * 10;
+        uint256 pooled0Before = _pooled(operatorAddrs[0]);
+        uint256 pooled1Before = _pooled(operatorAddrs[1]);
+
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        // a validator that produced nothing all epoch must not be paid for it
+        assertEq(_pooled(operatorAddrs[0]), pooled0Before, "maintaining validator was paid emission");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Before + expectedEmission, "active validator underpaid");
+        assertEq(l2pValidatorSet.totalEmitted(), expectedEmission);
+    }
+
     function testEmissionDustSweepNeverTouchesThePool() public {
         (, address[] memory consensusAddrs, uint64[] memory votingPowers, bytes[] memory voteAddrs) =
             _registerValidators(1);
@@ -440,7 +546,14 @@ contract EmissionScheduleTest is Deployer {
 
         value = abi.encode(uint256(999_999));
         vm.expectEmit(false, false, false, true, address(govHub));
-        emit failReasonWithStr("emissionHalvingPeriod too short");
+        emit failReasonWithStr("emissionHalvingPeriod out of range");
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionHalvingPeriod(), 2_000_000);
+
+        // an absurd period would overflow the window arithmetic and brick the epoch update
+        value = abi.encode(uint256(1_000_000_000_001));
+        vm.expectEmit(false, false, false, true, address(govHub));
+        emit failReasonWithStr("emissionHalvingPeriod out of range");
         _updateParamByGovHub(key, value, address(l2pValidatorSet));
         assertEq(l2pValidatorSet.emissionHalvingPeriod(), 2_000_000);
 
