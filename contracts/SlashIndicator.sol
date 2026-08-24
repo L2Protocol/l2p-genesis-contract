@@ -392,7 +392,7 @@ contract SlashIndicator is ISlashIndicator, System, IParamSubscriber {
             require(value.length == 32, "length of felonySlashScope mismatch");
             uint256 newMaliciousVoteSlashScope = BytesToTypes.bytesToUint256(32, value);
             require(
-                newMaliciousVoteSlashScope >= 28800 * 1 && newMaliciousVoteSlashScope < 28800 * 30,
+                newMaliciousVoteSlashScope >= 57600 * 1 && newMaliciousVoteSlashScope < 57600 * 30,
                 "the malicious vote slash scope out of range"
             );
             felonySlashScope = newMaliciousVoteSlashScope;
