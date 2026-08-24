@@ -18,17 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.body, '>CI')
     steps:
-      - uses: actions/checkout@master
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: echo "::set-output name=dir::$(yarn cache dir)"
-      - uses: actions/cache@v3
-        id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+      - uses: actions/checkout@v5
 
 #      - name: Run your CI script
 #        run: echo ${{github.event.pull_request.title}}
@@ -39,7 +29,7 @@ jobs:
           npm install
 
       - name: Extract L2P commitId and hardfork name from PR description
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         id: extract_pr_description
         with:
           script: |
