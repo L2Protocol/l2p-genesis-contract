@@ -99,8 +99,29 @@
         "0xad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5": "0x0000000000000000000000001b272dc2635cfbe67116434cdbfd7525f8f5196f"
       }
     },
-    "63Ae79C826b9FD64cd5D59520987A062240240D3": {
-      "balance": "0x33b2e3c9fd0803ce8000000"
+    "0x9dcf2B6c2e4D7B19A0E01f2567a5016eA8d2b64c": {
+      "balance": "0x5db43cde1a9e86e648000000"
+    },
+    "0xfF92dEFc41bf0e35Af7370Af381dE797f4e89133": {
+      "balance": "0x50c783eb9b5c85f2a8000000"
+    },
+    "0x5Cf2362A30CDc47006Af86A0555e968687C7522d": {
+      "balance": "0x50c783eb9b5c85f2a8000000"
+    },
+    "0x0894Dd24ECf50eA464E1cEb13443bCcC9684D314": {
+      "balance": "0x3077b58d5d37839198000000"
+    },
+    "0xea9277800E88D8fd8292197d2235DDbf8A3Ab1B0": {
+      "balance": "0x183bdac6ae9bc1c8cc000000"
+    },
+    "0xd96092d82E601457b4f215F9F8eabd75AF63b4B6": {
+      "balance": "0x204fce5e3e25026110000000"
+    },
+    "0x2f7D41e6E260C8F3c2D9393713032CE2C45Ef1cd": {
+      "balance": "0xa56fa5b99019a5c80000000"
+    },
+    "0x63Ae79C826b9FD64cd5D59520987A062240240D3": {
+      "balance": "0x115eecd2bdf282bee80000"
     }
   },
   "number": "0x0",
