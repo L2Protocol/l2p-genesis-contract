@@ -7,19 +7,19 @@ const validators = [
      'consensusAddr': '0xaE11fB1F89C83c3AD49636A283732A3692dE76f9',
      'feeAddr': '0xaE11fB1F89C83c3AD49636A283732A3692dE76f9',
      'l2pFeeAddr': '0xaE11fB1F89C83c3AD49636A283732A3692dE76f9',
-     'votingPower': 2001,
+     'votingPower': 7000000,
    },
    {
      'consensusAddr': '0x98803ED812D591B5dcc319652645036B6ca32d1B',
      'feeAddr': '0x98803ED812D591B5dcc319652645036B6ca32d1B',
      'l2pFeeAddr': '0x98803ED812D591B5dcc319652645036B6ca32d1B',
-     'votingPower': 2001,
+     'votingPower': 7000000,
    },
    {
      'consensusAddr': '0xDa209d1508a1680Be75751d0a9923d74997D90F2',
      'feeAddr': '0xDa209d1508a1680Be75751d0a9923d74997D90F2',
      'l2pFeeAddr': '0xDa209d1508a1680Be75751d0a9923d74997D90F2',
-     'votingPower': 2001,
+     'votingPower': 7000000,
    },
 ];
 const bLSPublicKeys = [
