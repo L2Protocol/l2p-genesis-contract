@@ -26,6 +26,7 @@
     "bohrTime": 1767884620,
     "pragueTime": 1767884630,
     "lorentzTime": 1767884640,
+    "osakaTime": 1767884650,
     "depositContractAddress": "0x0000000000000000000000000000000000000000",
     "parlia": {},
     "blobSchedule": {
@@ -35,6 +36,11 @@
         "baseFeeUpdateFraction": 3338477
       },
       "prague": {
+        "target": 3,
+        "max": 6,
+        "baseFeeUpdateFraction": 3338477
+      },
+      "osaka": {
         "target": 3,
         "max": 6,
         "baseFeeUpdateFraction": 3338477
