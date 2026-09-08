@@ -32,6 +32,22 @@ const init_holders = [
      address: '0x63Ae79C826b9FD64cd5D59520987A062240240D3',
      balance: BigInt('21000010000000000000000000').toString(16) // 21000010e18
   },
+  {
+     address: '0xaE11fB1F89C83c3AD49636A283732A3692dE76f9',
+     balance: BigInt('8000000000000000000000000').toString(16) // 8000000e18
+  },
+  {
+     address: '0x98803ED812D591B5dcc319652645036B6ca32d1B',
+     balance: BigInt('8000000000000000000000000').toString(16) // 8000000e18
+  },
+  {
+     address: '0xDa209d1508a1680Be75751d0a9923d74997D90F2',
+     balance: BigInt('8000000000000000000000000').toString(16) // 8000000e18
+  },
+  {
+     address: '0x1B272dC2635CFBE67116434CdBfD7525f8F5196F',
+     balance: BigInt('10000000000000000000000').toString(16) // 10000e18
+  },
 ];
 
 exports = module.exports = init_holders;
