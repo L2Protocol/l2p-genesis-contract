@@ -75,6 +75,47 @@ solc --optimize --optimize-runs 200 --abi --metadata-hash none --bin-runtime ./c
 
 You can refer to `generate:dev` in `package.json` for more details about how to custom params for local dev-net.
 
+## How to create a validator
+
+`scripts/create-validator` calls `StakeHub.createValidator`. It signs locally with ethers
+and broadcasts a raw transaction, so the node needs no unlocked account and no `personal`
+API. Everything is configured through its own `.env`, so the script itself is not edited.
+
+1. Create a BLS key and generate the ownership proof:
+```shell script
+geth bls account new  --datadir ./bls --blspassword ./bls-password.txt
+geth bls account list --datadir ./bls --blspassword ./bls-password.txt
+geth bls account generate-proof --datadir ./bls --blspassword ./bls-password.txt \
+     --chain-id 12216 <operator address> <BLS pubkey>
+```
+
+2. Fill in the settings:
+```shell script
+cp scripts/create-validator/.env.example scripts/create-validator/.env
+```
+`.env.example` documents every variable. The operator address is derived from
+`OPERATOR_PRIVATE_KEY` and must match the address the BLS proof was generated for.
+`RPC_L2P` falls back to the repo root `.env` if it is not set there.
+
+3. Run it:
+```shell script
+node scripts/create-validator --dry-run   # validate + simulate, sends nothing
+node scripts/create-validator             # sign and broadcast
+```
+
+Any variable can be overridden for a single run:
+```shell script
+VALIDATOR_MONIKER=Val02 node scripts/create-validator --dry-run
+```
+
+The script refuses to send if the node's chain id differs from `CHAIN_ID`, because the BLS
+proof is bound to the chain id. Reverts are decoded against the StakeHub, StakeCredit and
+GovToken ABIs, so a failed simulation reports the actual custom error.
+
+The transaction value is `minSelfDelegationL2P + LOCK_AMOUNT` (7,000,000 + 3,500 L2P with
+the current genesis settings), both read from the chain, unless `VALIDATOR_SELF_DELEGATION`
+is set to a higher amount.
+
 ## update ABI files
 
 ```bash
