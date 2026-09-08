@@ -128,6 +128,18 @@
     },
     "0x63Ae79C826b9FD64cd5D59520987A062240240D3": {
       "balance": "0x115eecd2bdf282bee80000"
+    },
+    "0xaE11fB1F89C83c3AD49636A283732A3692dE76f9": {
+      "balance": "0x69e10de76676d08000000"
+    },
+    "0x98803ED812D591B5dcc319652645036B6ca32d1B": {
+      "balance": "0x69e10de76676d08000000"
+    },
+    "0xDa209d1508a1680Be75751d0a9923d74997D90F2": {
+      "balance": "0x69e10de76676d08000000"
+    },
+    "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F": {
+      "balance": "0x21e19e0c9bab2400000"
     }
   },
   "number": "0x0",
