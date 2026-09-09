@@ -41,6 +41,7 @@ contract Deployer is Test {
     address payable public relayer;
 
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
+    uint256 internal constant PROPOSE_START_SUPPLY_THRESHOLD = 35_000_000 ether;
 
     event paramChange(string key, bytes value);
 
@@ -122,7 +123,7 @@ contract Deployer is Test {
     function _getNextUserAddress() internal returns (address payable) {
         address payable user = payable(address(uint160(uint256(nextUser))));
         nextUser = keccak256(abi.encodePacked(nextUser));
-        vm.deal(user, 10_000 ether);
+        vm.deal(user, stakeHub.minSelfDelegationL2P() * 3 + stakeHub.LOCK_AMOUNT() + 10_000 ether);
         return user;
     }
 
@@ -130,6 +131,12 @@ contract Deployer is Test {
         vm.startPrank(address(TIMELOCK_ADDR));
         govHub.updateParam(string(key), value, addr);
         vm.stopPrank();
+    }
+
+    function _ensureProposeSupply() internal {
+        while (govToken.totalSupply() < PROPOSE_START_SUPPLY_THRESHOLD) {
+            _createValidator(stakeHub.minSelfDelegationL2P());
+        }
     }
 
     function _createValidator(uint256 delegation)
@@ -179,7 +186,7 @@ contract Deployer is Test {
         uint64 votingPower;
         bytes memory voteAddress;
         for (uint256 i; i < number; ++i) {
-            votingPower = 2000 * 1e8;
+            votingPower = uint64(stakeHub.minSelfDelegationL2P() / 1e10);
             (operatorAddress, consensusAddress,, voteAddress) = _createValidator(uint256(votingPower) * 1e10);
 
             operatorAddrs[i] = operatorAddress;

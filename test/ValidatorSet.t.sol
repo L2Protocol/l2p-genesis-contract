@@ -214,7 +214,8 @@ contract ValidatorSetTest is Deployer {
 
         address val = consensusAddrs[0];
         address deprecated = _getNextUserAddress();
-        vm.deal(address(l2pValidatorSet), 0);
+        uint256 poolRemaining = l2pValidatorSet.emissionPoolRemaining();
+        vm.deal(address(l2pValidatorSet), poolRemaining);
 
         for (uint256 i; i < 5; ++i) {
             l2pValidatorSet.deposit{ value: 1 ether }(val);
@@ -225,7 +226,7 @@ contract ValidatorSetTest is Deployer {
 
         uint256 expectedBalance = _calcIncoming(11 ether);
         uint256 expectedIncoming = _calcIncoming(5.5 ether);
-        uint256 balance = address(l2pValidatorSet).balance;
+        uint256 balance = address(l2pValidatorSet).balance - poolRemaining;
         uint256 incoming = l2pValidatorSet.totalInComing();
         assertEq(balance, expectedBalance);
         assertEq(incoming, expectedIncoming);
