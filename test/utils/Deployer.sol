@@ -134,9 +134,13 @@ contract Deployer is Test {
     }
 
     function _ensureProposeSupply() internal {
-        while (govToken.totalSupply() < PROPOSE_START_SUPPLY_THRESHOLD) {
-            _createValidator(stakeHub.minSelfDelegationL2P());
+        uint256 supply = govToken.totalSupply();
+        if (supply >= PROPOSE_START_SUPPLY_THRESHOLD) {
+            return;
         }
+        uint256 missing = PROPOSE_START_SUPPLY_THRESHOLD - supply;
+        uint256 minSelfDelegation = stakeHub.minSelfDelegationL2P();
+        _createValidator(missing < minSelfDelegation ? minSelfDelegation : missing);
     }
 
     function _createValidator(uint256 delegation)
@@ -159,6 +163,7 @@ contract Deployer is Test {
         bytes memory blsProof = new bytes(96);
         consensusAddress = address(uint160(uint256(keccak256(voteAddress))));
 
+        vm.deal(operatorAddress, operatorAddress.balance + delegation + toLock);
         vm.prank(operatorAddress);
         stakeHub.createValidator{ value: delegation + toLock }(
             consensusAddress, voteAddress, blsProof, commission, description
