@@ -49,7 +49,7 @@ contract StakeHubTest is Deployer {
 
     function testCreateValidator() public {
         // create validator success
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
         address consensusAddress = stakeHub.getValidatorConsensusAddress(validator);
         bytes memory voteAddress = stakeHub.getValidatorVoteAddress(validator);
 
@@ -57,7 +57,7 @@ contract StakeHubTest is Deployer {
         vm.startPrank(operatorAddress);
 
         // create failed with duplicate consensus address
-        uint256 delegation = 2000 ether;
+        uint256 delegation = stakeHub.minSelfDelegationL2P();
         uint256 toLock = stakeHub.LOCK_AMOUNT();
         StakeHub.Commission memory commission = StakeHub.Commission({ rate: 10, maxRate: 100, maxChangeRate: 5 });
         StakeHub.Description memory description = StakeHub.Description({
@@ -93,7 +93,7 @@ contract StakeHubTest is Deployer {
 
     function testEditValidator() public {
         // create validator
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(validator);
 
         // edit failed because of `UpdateTooFrequently`
@@ -149,7 +149,7 @@ contract StakeHubTest is Deployer {
 
     function testDelegate() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(delegator);
 
         // failed with too small delegation amount
@@ -157,7 +157,7 @@ contract StakeHubTest is Deployer {
         stakeHub.delegate{ value: 1 }(validator, false);
 
         // success case
-        uint256 l2pAmount = 100 ether;
+        uint256 l2pAmount = stakeHub.minDelegationL2PChange();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);
@@ -169,10 +169,10 @@ contract StakeHubTest is Deployer {
 
     function testUndelegate() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(delegator);
 
-        uint256 l2pAmount = 100 ether;
+        uint256 l2pAmount = stakeHub.minDelegationL2PChange();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
 
@@ -200,7 +200,7 @@ contract StakeHubTest is Deployer {
     }
 
     function testUndelegateAll() public {
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         uint256 toLock = stakeHub.LOCK_AMOUNT();
         (address validator,, address credit,) = _createValidator(selfDelegation);
         uint256 _totalShares = IStakeCredit(credit).totalSupply();
@@ -229,11 +229,11 @@ contract StakeHubTest is Deployer {
 
     function testRedelegate() public {
         address delegator = _getNextUserAddress();
-        (address validator1,, address credit1,) = _createValidator(2000 ether);
-        (address validator2,, address credit2,) = _createValidator(2000 ether);
+        (address validator1,, address credit1,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        (address validator2,, address credit2,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(delegator);
 
-        uint256 l2pAmount = 100 ether;
+        uint256 l2pAmount = stakeHub.minDelegationL2PChange();
         stakeHub.delegate{ value: l2pAmount }(validator1, false);
         uint256 oldShares = IStakeCredit(credit1).balanceOf(delegator);
 
@@ -258,7 +258,7 @@ contract StakeHubTest is Deployer {
         vm.stopPrank();
 
         // self redelegate failed because of `SelfDelegationNotEnough`
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         vm.expectRevert(StakeHub.SelfDelegationNotEnough.selector);
         vm.prank(validator1);
         stakeHub.redelegate(validator1, validator2, selfDelegation, false);
@@ -272,7 +272,7 @@ contract StakeHubTest is Deployer {
         assertTrue(!success);
 
         // send to credit contract directly
-        (,, address credit,) = _createValidator(2000 ether);
+        (,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         (success,) = credit.call{ value: 1 ether }("");
         assertTrue(!success);
         (success,) = credit.call{ value: 1 ether }(hex"12");
@@ -287,11 +287,11 @@ contract StakeHubTest is Deployer {
 
     function testDistributeReward() public {
         address delegator = _getNextUserAddress();
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         (address validator,, address credit,) = _createValidator(selfDelegation);
 
         // 1. delegate 100 L2P and get 100 * 1e18 shares
-        uint256 delegation = 100 ether;
+        uint256 delegation = stakeHub.minDelegationL2PChange();
         vm.prank(delegator);
         stakeHub.delegate{ value: delegation }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
@@ -340,14 +340,14 @@ contract StakeHubTest is Deployer {
     function testDowntimeSlash() public {
         // totalShares: 2100095458884494749761
         // totalPooledL2P: 2200 ether
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P() + stakeHub.downtimeSlashAmount();
         uint256 reward = 100 ether;
         (address validator,, address credit,) = _createValidator(selfDelegation);
         _createValidator(selfDelegation); // create 2 validator to avoid empty jail
 
         address delegator = _getNextUserAddress();
         vm.prank(delegator);
-        stakeHub.delegate{ value: 100 ether }(validator, false);
+        stakeHub.delegate{ value: stakeHub.minDelegationL2PChange() }(validator, false);
 
         address consensusAddress = stakeHub.getValidatorConsensusAddress(validator);
         vm.deal(VALIDATOR_CONTRACT_ADDR, VALIDATOR_CONTRACT_ADDR.balance + reward);
@@ -394,13 +394,13 @@ contract StakeHubTest is Deployer {
     function testDoubleSignSlash() public {
         // totalShares: 2100095458884494749761
         // totalPooledL2P: 2200 ether
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         uint256 reward = 100 ether;
         (address validator,, address credit,) = _createValidator(selfDelegation);
 
         address delegator = _getNextUserAddress();
         vm.prank(delegator);
-        stakeHub.delegate{ value: 100 ether }(validator, false);
+        stakeHub.delegate{ value: stakeHub.minDelegationL2PChange() }(validator, false);
 
         address consensusAddress = stakeHub.getValidatorConsensusAddress(validator);
         vm.deal(VALIDATOR_CONTRACT_ADDR, VALIDATOR_CONTRACT_ADDR.balance + reward);
@@ -426,13 +426,13 @@ contract StakeHubTest is Deployer {
     function testMaliciousVoteSlash() public {
         // totalShares: 2100095458884494749761
         // totalPooledL2P: 2200 ether
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         uint256 reward = 100 ether;
         (address validator,, address credit,) = _createValidator(selfDelegation);
 
         address delegator = _getNextUserAddress();
         vm.prank(delegator);
-        stakeHub.delegate{ value: 100 ether }(validator, false);
+        stakeHub.delegate{ value: stakeHub.minDelegationL2PChange() }(validator, false);
 
         address consensusAddress = stakeHub.getValidatorConsensusAddress(validator);
         bytes memory voteAddr = stakeHub.getValidatorVoteAddress(validator);
@@ -465,7 +465,7 @@ contract StakeHubTest is Deployer {
         uint64 votingPower;
         bytes memory voteAddress;
         for (uint256 i; i < length; ++i) {
-            votingPower = (2000 + uint64(i) * 2 + 1) * 1e8;
+            votingPower = uint64(stakeHub.minSelfDelegationL2P() / 1e10) + (uint64(i) * 2 + 1) * 1e8;
             (operatorAddress,,,) = _createValidator(uint256(votingPower) * 1e10);
             consensusAddress = stakeHub.getValidatorConsensusAddress(operatorAddress);
             voteAddress = stakeHub.getValidatorVoteAddress(operatorAddress);
@@ -639,7 +639,7 @@ contract StakeHubTest is Deployer {
 
     function testAgent() external {
         // create validator
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(validator);
 
         // edit failed because of `UpdateTooFrequently`
@@ -715,8 +715,8 @@ contract StakeHubTest is Deployer {
          }
  
          // Create two validators
-         (address validator1,,,) = _createValidator(2000 ether);
-         (address validator2,,,) = _createValidator(2000 ether);
+         (address validator1,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
+         (address validator2,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
  
          // Add NodeIDs to validator1
          bytes32[] memory nodeIDs1 = new bytes32[](2);
@@ -759,7 +759,7 @@ contract StakeHubTest is Deployer {
         }
 
         // Create a validator
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
 
         // Add initial NodeIDs
         bytes32[] memory initialNodeIDs = new bytes32[](3);
@@ -810,7 +810,7 @@ contract StakeHubTest is Deployer {
         }
 
         // Create a validator
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
 
         // Add initial NodeIDs to reach exactly 5
         bytes32[] memory initialNodeIDs = new bytes32[](5);

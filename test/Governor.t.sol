@@ -32,11 +32,11 @@ contract GovernorTest is Deployer {
 
     function testDelegateVote() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(delegator);
 
         // success case
-        uint256 l2pAmount = 100 ether;
+        uint256 l2pAmount = stakeHub.minDelegationL2PChange();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);
@@ -58,11 +58,11 @@ contract GovernorTest is Deployer {
 
     function testProposeErrorCase() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
         vm.startPrank(delegator);
-        assert(governor.proposeStarted());
         vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - 2000 ether - 1 ether;
+        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P() - 1 ether;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);
@@ -124,11 +124,11 @@ contract GovernorTest is Deployer {
 
     function testProposalNotApproved() public {
         address delegator = _getNextUserAddress();
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
         vm.startPrank(delegator);
-        assert(governor.proposeStarted());
         vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - 2000 ether;
+        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 
         assertEq(govToken.getVotes(delegator), 0);
@@ -182,11 +182,11 @@ contract GovernorTest is Deployer {
 
     function testProposalQuorumNotReached() public {
         address delegator = _getNextUserAddress();
-        (address validator,,,) = _createValidator(2000 ether);
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
         vm.startPrank(delegator);
-        assert(governor.proposeStarted());
         vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - 2000 ether;
+        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 
         assertEq(govToken.getVotes(delegator), 0);
@@ -248,9 +248,9 @@ contract GovernorTest is Deployer {
 
     function testProposeQuorumReached() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
         vm.startPrank(delegator);
-        assert(governor.proposeStarted());
 
         uint256 l2pAmount = govToken.totalSupply() / 2 + 10_000_000 ether;
         vm.deal(delegator, l2pAmount * 2);
@@ -324,9 +324,9 @@ contract GovernorTest is Deployer {
 
     function testPropose() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
         vm.startPrank(delegator);
-        assert(governor.proposeStarted());
 
         uint256 l2pAmount = govToken.totalSupply() / 2 + 10_000_000 ether;
         vm.deal(delegator, l2pAmount * 2);
@@ -401,10 +401,10 @@ contract GovernorTest is Deployer {
 
     function testUndelegate() public {
         address delegator = _getNextUserAddress();
-        (address validator,, address credit,) = _createValidator(2000 ether);
+        (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         vm.startPrank(delegator);
 
-        uint256 l2pAmount = 100 ether;
+        uint256 l2pAmount = stakeHub.minDelegationL2PChange();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
 
@@ -432,7 +432,7 @@ contract GovernorTest is Deployer {
     }
 
     function testUndelegateAll() public {
-        uint256 selfDelegation = 2000 ether;
+        uint256 selfDelegation = stakeHub.minSelfDelegationL2P();
         uint256 toLock = stakeHub.LOCK_AMOUNT();
         (address validator,, address credit,) = _createValidator(selfDelegation);
         uint256 _totalShares = IStakeCredit(credit).totalSupply();
