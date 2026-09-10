@@ -17,10 +17,13 @@ remappings = [
 cache = true
 cache_path = 'cache'
 auto_detect_solc = true
-# Genesis contracts are placed at block 0, before this chain activates Shanghai, so the
-# bytecode must not contain PUSH0/MCOPY. solc <=0.8.19 defaulted to london; newer ones
-# default to the newest EVM they know, so the target is pinned rather than inherited.
-evm_version = "london"
+# Pinned rather than inherited: solc <=0.8.19 defaulted to london and newer ones default to
+# the newest EVM they know, so leaving this unset lets genesis bytecode change under us.
+# cancun is the newest target that changes codegen; prague and osaka compile bit-identically,
+# and cancun is the settled definition of the three. This assumes the chain has Cancun active
+# on the first block it produces, which holds as long as the fork times are in the past when
+# the network is started.
+evm_version = "cancun"
 optimizer = true
 optimizer_runs = 200
 verbosity = 3
