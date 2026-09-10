@@ -25,6 +25,12 @@ ffi = true
 initial_balance = '0xffffffffffffffffffffffff'
 bytecode_hash = 'none'
 
+# contracts/ens is vendored from ensdomains/ens-contracts; linting third-party
+# sources produces >1MB of findings we will not act on, which also overflowed the
+# execSync buffer in scripts/check-genesis-bytecode.ts.
+[lint]
+ignore = ["contracts/ens/**/*.sol"]
+
 [profile.default.rpc_storage_caching]
 chains = 'all'
 endpoints = 'all'

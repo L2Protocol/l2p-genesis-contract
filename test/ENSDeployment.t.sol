@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 
 import { DeployENS } from "../foundry-script/DeployENS.s.sol";
 import { ENS } from "../contracts/ens/ENS.sol";
-import { ENSRegistry } from "../contracts/ens/ENSRegistry.sol";
 import { IETHRegistrarController } from "../contracts/ens/ethregistrar/IETHRegistrarController.sol";
 import { IPriceOracle } from "../contracts/ens/ethregistrar/IPriceOracle.sol";
 
@@ -18,8 +17,7 @@ contract ENSDeploymentTest is Test, DeployENS {
     function setUp() public {
         vm.warp(1788865500);
 
-        ENSRegistry registry = new ENSRegistry();
-        ens = ENS(address(registry));
+        ens = _deployRegistry();
         deployer = address(this);
         finalOwner = address(this);
 
@@ -126,8 +124,7 @@ contract ENSDeploymentTest is Test, DeployENS {
     function test_OwnershipIsHandedToFinalOwner() public {
         address newOwner = address(0xB0B);
 
-        ENSRegistry registry = new ENSRegistry();
-        ens = ENS(address(registry));
+        ens = _deployRegistry();
         deployer = address(this);
         finalOwner = newOwner;
 
@@ -188,6 +185,12 @@ contract ENSDeploymentTest is Test, DeployENS {
 
         vm.warp(auctionStart + 21 days);
         assertEq(controller.rentPrice("l2protocol", ONE_YEAR).premium, 0);
+    }
+
+    /// @dev Deployed from the compiled artifact rather than imported, so that ENSRegistry.sol
+    ///      stays out of this file's compilation unit and keeps its pinned 0.8.17 bytecode.
+    function _deployRegistry() internal returns (ENS) {
+        return ENS(deployCode("ENSRegistry.sol:ENSRegistry"));
     }
 
     function _registration(

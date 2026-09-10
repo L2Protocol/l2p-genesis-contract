@@ -11,7 +11,9 @@ const work = async () => {
   const currentGenesis = JSON.parse(str);
   log('currentGenesis size:', JSON.stringify(currentGenesis, null, 2).length)
 
-  const result = execSync('poetry run python -m scripts.generate mainnet')
+  // forge prints build and lint output on stderr; the default 1MB execSync buffer
+  // overflows on it and the child is killed with SIGTERM.
+  const result = execSync('poetry run python -m scripts.generate mainnet', {maxBuffer: 256 * 1024 * 1024})
   const resultStr = result.toString()
   if (resultStr.indexOf('Generate genesis of mainnet successfully') === -1) {
     throw Error(`generate mainnet genesis failed, error result: ${resultStr}`)
