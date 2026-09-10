@@ -18,6 +18,8 @@ chain_id: int
 hex_chain_id: str
 ens_registry_owner: str
 
+DEFAULT_ENS_REGISTRY_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
+
 main = typer.Typer()
 
 
@@ -210,7 +212,7 @@ def mainnet():
     global network, chain_id, hex_chain_id, ens_registry_owner
     network = "mainnet"
     chain_id = 12216
-    ens_registry_owner = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
+    ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
     hex_chain_id = convert_chain_id(chain_id)
 
     # mainnet init data
@@ -257,8 +259,9 @@ def mainnet():
 
 @main.command(help="Generate contracts for L2P testnet")
 def testnet():
-    global network, chain_id, hex_chain_id
+    global network, chain_id, hex_chain_id, ens_registry_owner
     network = "testnet"
+    ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
     chain_id = 97
     hex_chain_id = convert_chain_id(chain_id)
 
@@ -333,10 +336,13 @@ def dev(
     init_min_period_after_quorum: Annotated[
         str,
         typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)",
-    init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours"
+    init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours",
+    dev_ens_registry_owner: Annotated[
+        str, typer.Option(help="owner of the ENS root node in genesis")] = DEFAULT_ENS_REGISTRY_OWNER
 ):
-    global network, chain_id, hex_chain_id
+    global network, chain_id, hex_chain_id, ens_registry_owner
     network = "dev"
+    ens_registry_owner = dev_ens_registry_owner
     chain_id = dev_chain_id
     hex_chain_id = convert_chain_id(chain_id)
 
