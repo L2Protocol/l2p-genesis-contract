@@ -1,7 +1,7 @@
-// Pinned: this contract is deployed in genesis, so its bytecode must stay reproducible.
-// A floating pragma lets the solc version shift when neighbouring sources change,
-// which silently changes the bytecode and breaks scripts/check-genesis-bytecode.ts.
-pragma solidity 0.8.17;
+// Upstream ships a floating pragma here. This contract goes into genesis, so it is pinned
+// like every other genesis contract: a floating version shifts with neighbouring sources and
+// silently changes the bytecode.
+pragma solidity 0.8.30;
 
 import "./ENS.sol";
 

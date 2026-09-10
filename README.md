@@ -69,7 +69,7 @@ Check the `genesis.json` file, and you can get the exact compiled bytecode for d
 (`poetry run python -m scripts.generate --help ` for more details)
 ```
 # you can verify the bytecode in genesis.json with solc, take ./contracts/StakeHub.sol for example:
-solc-select use 0.8.17
+solc-select use 0.8.30
 solc --optimize --optimize-runs 200 --abi --metadata-hash none --bin-runtime ./contracts/StakeHub.sol --base-path . --include-path ./node_modules/ -o output
 ```
 

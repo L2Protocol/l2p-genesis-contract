@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.17;
+pragma solidity 0.8.30;
 
 library Utils {
     function compareStrings(string memory a, string memory b) internal pure returns (bool) {

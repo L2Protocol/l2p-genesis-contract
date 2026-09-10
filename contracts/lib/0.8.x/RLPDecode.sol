@@ -6,7 +6,7 @@
  * And we also applied this lib in greenfield(https://github.com/bnb-chain/greenfield) project.
  * This is unnecessary to be audited again.
  */
-pragma solidity 0.8.17;
+pragma solidity 0.8.30;
 
 library RLPDecode {
     uint8 constant STRING_SHORT_START = 0x80;
