@@ -5,9 +5,11 @@ script = 'foundry-script'
 out = 'out'
 fs_permissions = [{ access = "read-write", path = "./out" }]
 libs = ['lib', 'node_modules']
+auto_detect_remappings = false
 remappings = [
     'ds-test/=lib/forge-std/lib/ds-test/src/',
     'forge-std/=lib/forge-std/src/',
+    '@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/',
     '@openzeppelin/contracts-v5/=node_modules/@openzeppelin/contracts-v5/',
     '@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/',
     '@ensdomains/buffer/=node_modules/@ensdomains/buffer/',
