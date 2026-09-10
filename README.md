@@ -116,6 +116,100 @@ The transaction value is `minSelfDelegationL2P + LOCK_AMOUNT` (7,000,000 + 3,500
 the current genesis settings), both read from the chain, unless `VALIDATOR_SELF_DELEGATION`
 is set to a higher amount.
 
+## How to deploy ENS and the .l2p TLD
+
+The `ENSRegistry` is placed in genesis at `0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e`, with the
+root node (`0x0`) owned by the address passed as `--ensRegistryOwner`. Everything else is deployed
+as regular transactions by `foundry-script/DeployENS.s.sol`, which must be run from that same
+root-owning account.
+
+The ENS sources under `contracts/ens/` are vendored from
+[ens-contracts](https://github.com/ensdomains/ens-contracts) v1.7.0. Two files are not upstream:
+
+- `ethregistrar/L2PRegistrarController.sol` is `ETHRegistrarController.sol` with the hardcoded
+  `.eth` TLD replaced by `.l2p` (`L2P_NODE` = `namehash("l2p")` and the reverse-record suffix).
+  Upstream hardcodes the TLD, so a copy is unavoidable; keep the diff to those lines so it stays
+  easy to rebase.
+- `ethregistrar/L2PPriceOracle.sol` replaces upstream's `StablePriceOracle` /
+  `ExponentialPremiumPriceOracle` pair. Those price names in USD and divide by a Chainlink feed,
+  which this chain does not have. This one holds fixed yearly prices in L2P and skips the
+  conversion; the premium decay for expired names is upstream's, unchanged. Upstream's
+  `DummyOracle` is not vendored at all, because its price setter is unauthenticated.
+
+`NameWrapper` is deliberately not deployed: it hardcodes `.eth` in more places and the v1.7
+controller talks to `BaseRegistrarImplementation` directly.
+
+### Deploying
+
+```shell script
+export RPC_L2P=https://...
+export DEPLOYER_PRIVATE_KEY=...       # must own the ENS root node, 0x prefix optional
+forge script DeployENS --rpc-url $RPC_L2P --broadcast \
+  --priority-gas-price 1gwei --with-gas-price 1gwei
+```
+
+Run without `--broadcast` first for a dry run. The script reverts up front if the sender does not
+own the root node, and asserts the full wiring at the end.
+
+The gas price flags are needed because the chain enforces a minimum gas price (`cast gas-price`
+reports `100000000`, i.e. 0.1 gwei) while reporting a zero base fee, so Foundry's own estimate comes
+out at 1 wei and every transaction is rejected with `transaction gas price below minimum`. Nothing is
+sent when that happens, so it is safe to simply retry with the flags.
+
+Optional settings, all with defaults:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `ENS_REGISTRY` | `0x0000…2e1e` | The registry from genesis |
+| `ENS_OWNER` | the deployer | Receives ownership of every contract at the end |
+| `RENT_L2P_3_LETTER` | `640` | Yearly price for 3-character names, in whole L2P |
+| `RENT_L2P_4_LETTER` | `160` | Yearly price for 4-character names, in whole L2P |
+| `RENT_L2P_5_LETTER` | `5` | Yearly price for names of 5 characters and up, in whole L2P |
+| `MIN_COMMITMENT_AGE` | `60` | Seconds between `commit` and `register` |
+| `MAX_COMMITMENT_AGE` | `86400` | Seconds after which a commitment expires |
+| `START_PREMIUM_L2P` | `100000` | Starting premium of the expiry auction, in whole L2P |
+| `PREMIUM_TOTAL_DAYS` | `21` | Days over which that premium decays to zero |
+| `BATCH_GATEWAY_URLS` | empty | Comma-separated CCIP-read gateways for the UniversalResolver |
+
+Prices are fixed amounts of L2P per year, with no price feed involved. A shorter or longer
+registration is charged pro rata: `yearlyPrice * duration / 365 days`, so a full year costs the
+listed amount exactly.
+
+Names that expire become cheaper over time rather than being claimable instantly: for
+`PREMIUM_TOTAL_DAYS` after the 90-day grace period, a name carries a premium that starts at
+`START_PREMIUM_L2P` and halves each day down to zero.
+
+Both the oracle's prices and the controller's reference to it are immutable, which is how upstream
+ENS works. Changing prices therefore means deploying a new `L2PPriceOracle` and a new
+`L2PRegistrarController`, then calling `addController` on the base registrar for the new one and
+`removeController` for the old. If you would rather be able to adjust prices in place, the oracle
+can be made `Ownable` with a setter instead.
+
+### Registering a name
+
+Registration is commit-reveal, and labels shorter than 3 characters are rejected:
+
+```shell script
+CTRL=<L2PRegistrarController>
+REG="(mynames,$OWNER,31536000,$SECRET,$RESOLVER,[],0,0x00...00)"
+cast call  $CTRL "makeCommitment((string,address,uint256,bytes32,address,bytes[],uint8,bytes32))(bytes32)" "$REG"
+cast send  $CTRL "commit(bytes32)" $COMMITMENT
+# wait MIN_COMMITMENT_AGE seconds
+cast send  $CTRL "register((string,address,uint256,bytes32,address,bytes[],uint8,bytes32))" "$REG" --value $PRICE
+```
+
+Reverse resolution requires the forward record to point back at the same address, otherwise the
+UniversalResolver reverts with `ReverseAddressMismatch`.
+
+### Tests
+
+```shell script
+forge test --match-path test/ENSDeployment.t.sol
+```
+
+These run against a fresh registry, no fork needed. They drive the deploy script's own steps, so
+the tested wiring is the deployed wiring.
+
 ## update ABI files
 
 ```bash

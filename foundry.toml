@@ -8,6 +8,9 @@ libs = ['lib', 'node_modules']
 remappings = [
     'ds-test/=lib/forge-std/lib/ds-test/src/',
     'forge-std/=lib/forge-std/src/',
+    '@openzeppelin/contracts-v5/=node_modules/@openzeppelin/contracts-v5/',
+    '@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/',
+    '@ensdomains/buffer/=node_modules/@ensdomains/buffer/',
 ]
 cache = true
 cache_path = 'cache'
