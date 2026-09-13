@@ -7,10 +7,12 @@ import { DeployENS } from "../foundry-script/DeployENS.s.sol";
 import { ENS } from "../contracts/ens/ENS.sol";
 import { IETHRegistrarController } from "../contracts/ens/ethregistrar/IETHRegistrarController.sol";
 import { IPriceOracle } from "../contracts/ens/ethregistrar/IPriceOracle.sol";
+import { L2PUsdOracle } from "../contracts/ens/ethregistrar/L2PUsdOracle.sol";
 
 contract ENSDeploymentTest is Test, DeployENS {
     bytes32 internal constant SECRET = keccak256("secret");
     uint256 internal constant ONE_YEAR = 365 days;
+    uint256 internal constant PRICE_TOLERANCE = 1e9; // 1e-9 relative, see test_PriceIsPeggedToUsd
 
     address internal alice = address(0xA11CE);
 
@@ -31,7 +33,7 @@ contract ENSDeploymentTest is Test, DeployENS {
         _deployUniversalResolver();
         _verify();
 
-        vm.deal(alice, 1000 ether);
+        vm.deal(alice, 1_000_000 ether);
     }
 
     function test_NamehashConstantMatchesLabel() public pure {
@@ -144,16 +146,18 @@ contract ENSDeploymentTest is Test, DeployENS {
         assertEq(reverseRegistrar.owner(), newOwner);
         assertEq(defaultReverseRegistrar.owner(), newOwner);
         assertEq(controller.owner(), newOwner);
+        assertEq(usdOracle.owner(), newOwner);
         assertEq(ens.owner(REVERSE_NODE), newOwner);
 
         assertTrue(root.controllers(newOwner));
         assertFalse(root.controllers(address(this)));
     }
 
-    function test_PriceIsFixedInL2P() public view {
-        // 5 L2P per year for names of five characters and up, priced per second.
+    function test_PriceIsPeggedToUsd() public view {
+        // $5 per year for names of five characters and up, at $0.0001 per L2P, priced per second.
+        // The per-second price is rounded down, so a year comes out a hair under the round number.
         IPriceOracle.Price memory oneYear = controller.rentPrice("l2protocol", ONE_YEAR);
-        assertEq(oneYear.base, 5 ether);
+        assertApproxEqRel(oneYear.base, 50_000 ether, PRICE_TOLERANCE);
         assertEq(oneYear.premium, 0);
 
         IPriceOracle.Price memory twoYears = controller.rentPrice("l2protocol", 2 * ONE_YEAR);
@@ -165,9 +169,54 @@ contract ENSDeploymentTest is Test, DeployENS {
         uint256 four = controller.rentPrice("abcd", ONE_YEAR).base;
         uint256 five = controller.rentPrice("abcde", ONE_YEAR).base;
 
-        assertEq(three, 640 ether);
-        assertEq(four, 160 ether);
-        assertEq(five, 5 ether);
+        assertApproxEqRel(three, 6_400_000 ether, PRICE_TOLERANCE);
+        assertApproxEqRel(four, 1_600_000 ether, PRICE_TOLERANCE);
+        assertApproxEqRel(five, 50_000 ether, PRICE_TOLERANCE);
+    }
+
+    function test_PriceInL2PFollowsTheUsdOracle() public {
+        uint256 before = controller.rentPrice("l2protocol", ONE_YEAR).base;
+
+        // L2P doubles in USD terms, so a name costs half as much L2P.
+        usdOracle.setLatestAnswer(20_000);
+        assertApproxEqRel(controller.rentPrice("l2protocol", ONE_YEAR).base, before / 2, PRICE_TOLERANCE);
+
+        // At $1.00 per L2P the USD prices are the L2P prices.
+        usdOracle.setLatestAnswer(1e8);
+        assertApproxEqRel(controller.rentPrice("l2protocol", ONE_YEAR).base, 5 ether, PRICE_TOLERANCE);
+        assertApproxEqRel(controller.rentPrice("abc", ONE_YEAR).base, 640 ether, PRICE_TOLERANCE);
+    }
+
+    function test_OnlyTheOwnerCanSetTheUsdPrice() public {
+        vm.prank(alice);
+        vm.expectRevert("Ownable: caller is not the owner");
+        usdOracle.setLatestAnswer(1e8);
+
+        assertEq(usdOracle.latestAnswer(), 10_000);
+    }
+
+    function test_UsdOracleRejectsNonPositivePrices() public {
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(0)));
+        usdOracle.setLatestAnswer(0);
+
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(-1)));
+        usdOracle.setLatestAnswer(-1);
+
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(0)));
+        new L2PUsdOracle(0);
+    }
+
+    function test_RegistrationRevenueGoesToTheControllerOwner() public {
+        uint256 price = controller.rentPrice("l2protocol", ONE_YEAR).base;
+        _register("l2protocol", alice);
+        assertEq(address(controller).balance, price);
+
+        address treasury = address(0x7E5);
+        controller.transferOwnership(treasury);
+        controller.withdraw();
+
+        assertEq(treasury.balance, price);
+        assertEq(address(controller).balance, 0);
     }
 
     function test_PremiumDecaysToZeroAfterTheDecayPeriod() public {

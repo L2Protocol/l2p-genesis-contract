@@ -6,7 +6,8 @@ import "forge-std/Script.sol";
 import { ENS } from "../contracts/ens/ENS.sol";
 import { Root } from "../contracts/ens/root/Root.sol";
 import { BaseRegistrarImplementation } from "../contracts/ens/ethregistrar/BaseRegistrarImplementation.sol";
-import { L2PPriceOracle } from "../contracts/ens/ethregistrar/L2PPriceOracle.sol";
+import { L2PUsdOracle } from "../contracts/ens/ethregistrar/L2PUsdOracle.sol";
+import { ExponentialPremiumPriceOracle } from "../contracts/ens/ethregistrar/ExponentialPremiumPriceOracle.sol";
 import { IPriceOracle } from "../contracts/ens/ethregistrar/IPriceOracle.sol";
 import { L2PRegistrarController } from "../contracts/ens/ethregistrar/L2PRegistrarController.sol";
 import { ReverseRegistrar } from "../contracts/ens/reverseRegistrar/ReverseRegistrar.sol";
@@ -36,7 +37,8 @@ contract DeployENS is Script {
     BaseRegistrarImplementation public baseRegistrar;
     ReverseRegistrar public reverseRegistrar;
     DefaultReverseRegistrar public defaultReverseRegistrar;
-    L2PPriceOracle public priceOracle;
+    L2PUsdOracle public usdOracle;
+    ExponentialPremiumPriceOracle public priceOracle;
     L2PRegistrarController public controller;
     PublicResolver public publicResolver;
     GatewayProvider public batchGatewayProvider;
@@ -115,19 +117,31 @@ contract DeployENS is Script {
         defaultReverseRegistrar = new DefaultReverseRegistrar();
     }
 
+    /// @dev Prices are set in USD and converted to L2P at the rate held by the L2PUsdOracle, so
+    ///      that the L2P price of a name does not move with the L2P market price. The price oracle
+    ///      wants attoUSD per second, so yearly USD amounts are divided down here.
     function _deployPriceOracle() internal {
-        uint256[] memory rentPrices = new uint256[](5);
-        rentPrices[0] = vm.envOr("RENT_L2P_1_LETTER", uint256(0)) * 1 ether;
-        rentPrices[1] = vm.envOr("RENT_L2P_2_LETTER", uint256(0)) * 1 ether;
-        rentPrices[2] = vm.envOr("RENT_L2P_3_LETTER", uint256(640)) * 1 ether;
-        rentPrices[3] = vm.envOr("RENT_L2P_4_LETTER", uint256(160)) * 1 ether;
-        rentPrices[4] = vm.envOr("RENT_L2P_5_LETTER", uint256(5)) * 1 ether;
+        usdOracle = new L2PUsdOracle(int256(vm.envOr("L2P_USD_PRICE_E8", uint256(10_000))));
 
-        priceOracle = new L2PPriceOracle(
+        uint256[] memory rentPrices = new uint256[](5);
+        rentPrices[0] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_1_LETTER", uint256(0)));
+        rentPrices[1] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_2_LETTER", uint256(0)));
+        rentPrices[2] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_3_LETTER", uint256(640)));
+        rentPrices[3] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_4_LETTER", uint256(160)));
+        rentPrices[4] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_5_LETTER", uint256(5)));
+
+        priceOracle = new ExponentialPremiumPriceOracle(
+            usdOracle,
             rentPrices,
-            vm.envOr("START_PREMIUM_L2P", uint256(100_000)) * 1e18,
+            vm.envOr("START_PREMIUM_USD", uint256(100_000_000)) * 1e18,
             vm.envOr("PREMIUM_TOTAL_DAYS", uint256(21))
         );
+    }
+
+    function _usdPerYearToAttoUsdPerSecond(
+        uint256 usdPerYear
+    ) internal pure returns (uint256) {
+        return usdPerYear * 1e18 / 365 days;
     }
 
     function _deployController() internal {
@@ -172,6 +186,7 @@ contract DeployENS is Script {
         reverseRegistrar.transferOwnership(finalOwner);
         defaultReverseRegistrar.transferOwnership(finalOwner);
         controller.transferOwnership(finalOwner);
+        usdOracle.transferOwnership(finalOwner);
         ens.setOwner(REVERSE_NODE, finalOwner);
     }
 
@@ -182,6 +197,7 @@ contract DeployENS is Script {
         require(ens.resolver(L2P_NODE) == address(publicResolver), "l2p resolver not set");
         require(baseRegistrar.controllers(address(controller)), "controller not authorised on BaseRegistrar");
         require(controller.valid("l2protocol"), "controller rejects a valid label");
+        require(controller.rentPrice("l2protocol", 365 days).base > 0, "controller prices a name at zero");
     }
 
     function _report() internal view {
@@ -191,7 +207,8 @@ contract DeployENS is Script {
         console.log("BaseRegistrar (.l2p)   ", address(baseRegistrar));
         console.log("ReverseRegistrar       ", address(reverseRegistrar));
         console.log("DefaultReverseRegistrar", address(defaultReverseRegistrar));
-        console.log("L2PPriceOracle         ", address(priceOracle));
+        console.log("L2PUsdOracle           ", address(usdOracle));
+        console.log("PriceOracle            ", address(priceOracle));
         console.log("L2PRegistrarController ", address(controller));
         console.log("PublicResolver         ", address(publicResolver));
         console.log("BatchGatewayProvider   ", address(batchGatewayProvider));

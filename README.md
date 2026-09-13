@@ -139,11 +139,10 @@ The ENS sources under `contracts/ens/` are vendored from
   `.eth` TLD replaced by `.l2p` (`L2P_NODE` = `namehash("l2p")` and the reverse-record suffix).
   Upstream hardcodes the TLD, so a copy is unavoidable; keep the diff to those lines so it stays
   easy to rebase.
-- `ethregistrar/L2PPriceOracle.sol` replaces upstream's `StablePriceOracle` /
-  `ExponentialPremiumPriceOracle` pair. Those price names in USD and divide by a Chainlink feed,
-  which this chain does not have. This one holds fixed yearly prices in L2P and skips the
-  conversion; the premium decay for expired names is upstream's, unchanged. Upstream's
-  `DummyOracle` is not vendored at all, because its price setter is unauthenticated.
+- `ethregistrar/L2PUsdOracle.sol` is the `AggregatorInterface` that upstream's `StablePriceOracle`
+  divides its USD prices by. On Ethereum that is a Chainlink ETH/USD feed, which this chain does not
+  have, so this one holds the USD price of L2P as a plain value that only its owner can change.
+  Upstream's `DummyOracle` is not vendored, because its price setter is unauthenticated.
 
 `NameWrapper` is deliberately not deployed: it hardcodes `.eth` in more places and the v1.7
 controller talks to `BaseRegistrarImplementation` directly.
@@ -192,7 +191,7 @@ wiring is right.
 forge test --match-path test/ENSDeployment.t.sol
 ```
 
-You should see `Suite result: ok. 14 passed; 0 failed; 0 skipped`.
+You should see `Suite result: ok. 18 passed; 0 failed; 0 skipped`.
 
 Stop here if even one test fails. Do not move on to a real chain; find out why first.
 
@@ -314,7 +313,8 @@ below, and for wallets and block explorers.
 | `BaseRegistrar`           |         | The `.l2p` names as NFTs      |
 | `ReverseRegistrar`        |         | Address to name               |
 | `DefaultReverseRegistrar` |         | Reverse across all chains     |
-| `L2PPriceOracle`          |         | Fixed prices in L2P           |
+| `L2PUsdOracle`            |         | The L2P/USD rate, adjustable  |
+| `PriceOracle`             |         | Prices in USD, paid in L2P    |
 | `L2PRegistrarController`  |         | Where people register         |
 | `PublicResolver`          |         | Addresses and text records    |
 | `BatchGatewayProvider`    |         | CCIP-read gateways            |
@@ -348,7 +348,17 @@ cast call $CTRL "rentPrice(string,uint256)((uint256,uint256))" \
   l2protocol 31536000 --rpc-url $RPC_L2P
 ```
 
-You should see `(5000000000000000000, 0)`, which is 5 L2P for a year with no premium.
+You should see `(49999999999740480000000, 0)`: 50,000 L2P for a year with no premium, which is $5 at
+the default rate of $0.0001 per L2P. The last digits are rounding, see "Settings you can pass".
+
+If the rate on your `.env` differs from the default, check it against the oracle:
+
+```shell script
+cast call $(cast call $CTRL "prices()(address)" --rpc-url $RPC_L2P) \
+  "usdOracle()(address)" --rpc-url $RPC_L2P
+```
+
+That gives the `L2PUsdOracle` address, and `latestAnswer()` on it returns the rate.
 
 ### Phase 5 — Registering the first name
 
@@ -446,28 +456,73 @@ All optional; without them the script uses the defaults. Put them in `.env` befo
 |---|---|---|
 | `ENS_REGISTRY` | `0x0000…2e1e` | The registry from genesis |
 | `ENS_OWNER` | the deployer | Receives ownership of every contract at the end |
-| `RENT_L2P_3_LETTER` | `640` | Yearly price for 3-character names, in whole L2P |
-| `RENT_L2P_4_LETTER` | `160` | Yearly price for 4-character names, in whole L2P |
-| `RENT_L2P_5_LETTER` | `5` | Yearly price for names of 5 characters and up, in whole L2P |
+| `L2P_USD_PRICE_E8` | `10000` | USD price of one L2P, times 1e8 (`10000` is $0.0001) |
+| `RENT_USD_3_LETTER` | `640` | Yearly price for 3-character names, in whole USD |
+| `RENT_USD_4_LETTER` | `160` | Yearly price for 4-character names, in whole USD |
+| `RENT_USD_5_LETTER` | `5` | Yearly price for names of 5 characters and up, in whole USD |
 | `MIN_COMMITMENT_AGE` | `60` | Seconds between `commit` and `register` |
 | `MAX_COMMITMENT_AGE` | `86400` | Seconds after which a commitment expires |
-| `START_PREMIUM_L2P` | `100000` | Starting premium of the expiry auction, in whole L2P |
+| `START_PREMIUM_USD` | `100000000` | Starting premium of the expiry auction, in whole USD |
 | `PREMIUM_TOTAL_DAYS` | `21` | Days over which that premium decays to zero |
 | `BATCH_GATEWAY_URLS` | empty | Comma-separated CCIP-read gateways for the UniversalResolver |
 
-Prices are fixed amounts of L2P per year, with no price feed involved. A shorter or longer
-registration is charged pro rata: `yearlyPrice * duration / 365 days`, so a full year costs the
-listed amount exactly.
+Prices are set in USD and paid in L2P, converted at the rate held by the `L2PUsdOracle`. That keeps
+the price of a name stable in what people actually reason in: if L2P goes up tenfold, a name still
+costs $5, not $50, and if it drops tenfold, names do not become free. The USD amounts are upstream
+ENS's own defaults for `.eth`, and the two- and one-character prices are left at zero because the
+controller does not accept labels under three characters anyway.
+
+The rate is not read from an external feed, which this chain does not have and which could be
+manipulated if it did. It is a value that the owner of the oracle sets, with 8 decimals the way
+Chainlink feeds report it: `10000` is $0.0001 per L2P, `100000000` is $1.00. Update it as the
+market price moves. The owner is the deployer at first (`ENS_OWNER` if set) and governance once the
+other ENS contracts are handed over too; `DeployENS` transfers it along with the rest.
+
+```shell script
+export ORACLE=0x...your-L2PUsdOracle...
+
+# L2P now trades at $0.00025
+cast send $ORACLE "setLatestAnswer(int256)" 25000 \
+  --private-key $DEPLOYER_PRIVATE_KEY --rpc-url $RPC_L2P \
+  --priority-gas-price 1gwei --with-gas-price 1gwei
+```
+
+The change takes effect from the next block on, with nothing else to update. A registration pays
+the price of the block it lands in: if the rate moved between quoting and landing, the controller
+refunds what was sent too much, or reverts with `InsufficientValue` when it was too little. Zero
+and negative values are refused, because the price oracle divides by this number.
+
+A shorter or longer registration is charged pro rata. Upstream stores prices per second and rounds
+down, so a year costs a few ten-billionths under the listed amount rather than exactly the amount,
+which is why step 15 shows `49999999999740480000000` and not a round number.
 
 Names that expire become cheaper over time rather than being claimable instantly: for
 `PREMIUM_TOTAL_DAYS` after the 90-day grace period, a name carries a premium that starts at
-`START_PREMIUM_L2P` and halves each day down to zero.
+`START_PREMIUM_USD` and halves each day down to zero. The default is upstream's, and it is high on
+purpose: the first days make sniping pointless, and the auction that matters is the last ten days,
+when the premium falls from about $100,000 to nothing.
 
-Both the oracle's prices and the controller's reference to it are immutable, which is how upstream
-ENS works. Changing prices therefore means deploying a new `L2PPriceOracle` and a new
+The USD prices themselves and the controller's reference to the price oracle are immutable, which
+is how upstream ENS works. Changing the USD prices therefore means deploying a new
+`ExponentialPremiumPriceOracle` (pointing at the same `L2PUsdOracle`) and a new
 `L2PRegistrarController`, then calling `addController` on the base registrar for the new one and
-`removeController` for the old. If you would rather be able to adjust prices in place, the oracle
-can be made `Ownable` with a setter instead.
+`removeController` for the old. Changing the L2P/USD rate never needs that.
+
+### Where the L2P goes
+
+Registration and renewal fees stay in the `L2PRegistrarController`, and its `withdraw()` sends the
+whole balance to the controller's owner. Anyone can call it. Fees therefore go to the treasury, not
+to a burn: the owner is the deployer now and governance later, so the name service is revenue for
+whoever governs the chain. This is upstream's behaviour and involves no changes to the controller.
+
+```shell script
+cast send $CTRL "withdraw()" --private-key $DEPLOYER_PRIVATE_KEY --rpc-url $RPC_L2P \
+  --priority-gas-price 1gwei --with-gas-price 1gwei
+```
+
+If the fees should be burnt instead, that is a one-line change in `withdraw()` to send to
+`address(0)` or the burn address, but it has to be made before deployment: the controller is not
+upgradeable.
 
 ### Fixed values
 
