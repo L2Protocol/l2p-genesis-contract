@@ -41,7 +41,7 @@ contract Deployer is Test {
     address payable public relayer;
 
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
-    uint256 internal constant PROPOSE_START_SUPPLY_THRESHOLD = 35_000_000 ether;
+    uint256 internal constant PROPOSE_START_SUPPLY_THRESHOLD = 1_750_000_000 ether;
 
     event paramChange(string key, bytes value);
 

@@ -40,8 +40,8 @@ contract L2PGovernor is
     uint256 private constant INIT_PROPOSAL_THRESHOLD = 700_000 ether; //  = 700_000 L2P
     uint256 private constant INIT_QUORUM_NUMERATOR = 10; // for >= 10%
 
-    // starting propose requires totalSupply of GovL2P >= 35000000 * 1e18
-    uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD = 35_000_000 ether;
+    // starting propose requires totalSupply of GovL2P >= 1750000000 * 1e18
+    uint256 private constant PROPOSE_START_GOVL2P_SUPPLY_THRESHOLD = 1_750_000_000 ether;
     // ensures there is a minimum voting period (1 days) after quorum is reached
     uint64 private constant INIT_MIN_PERIOD_AFTER_QUORUM = uint64(1 days * 1000 / BLOCK_INTERVAL_MS);
 

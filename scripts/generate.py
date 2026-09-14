@@ -247,7 +247,7 @@ def mainnet():
     init_voting_period = "7 days * 1000 / BLOCK_INTERVAL_MS"
     init_proposal_threshold = "700_000 ether"
     init_quorum_numerator = "10"
-    propose_start_threshold = "35_000_000 ether"
+    propose_start_threshold = "1_750_000_000 ether"
     init_min_period_after_quorum = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)"
     init_minimal_delay = "24 hours"
     presale_duration = "365 days"
