@@ -1162,7 +1162,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         --numOfMaintaining;
 
         // step 1: calculate slashCount
-        uint256 slashCount = block.number.sub(validatorExtraSet[index].enterMaintenanceHeight).div(miningValidatorCount)
+        uint256 slashCount = block.number
+            .sub(validatorExtraSet[index].enterMaintenanceHeight)
+            .div(miningValidatorCount)
             .div(maintainSlashScale);
 
         // step 2: clear isMaintaining info
