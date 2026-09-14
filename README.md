@@ -255,7 +255,7 @@ cast --version
 node --version
 ```
 
-You should see forge 1.5.0 or newer (CI pins 1.5.0) and node v18 or newer. If Foundry is missing,
+You should see forge 1.8.1 or newer (CI pins 1.8.1) and node v18 or newer. If Foundry is missing,
 install it with `curl -L https://foundry.paradigm.xyz | bash` followed by `foundryup`.
 
 **Step 2. Go to the repo and install the dependencies.** Every command from here on runs from this
