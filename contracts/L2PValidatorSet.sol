@@ -68,8 +68,8 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     uint256 public constant EMISSION_POOL_TOTAL = 50_000_000_000 ether;
     uint256 public constant EMISSION_RATE_PER_BLOCK_INIT = 317 ether;
     uint256 public constant EMISSION_HALVING_PERIOD_INIT = 105_192_000;
-    uint256 public constant EMISSION_START_BLOCK_INIT = 21_038_400;
     uint256 public constant EMISSION_MAX_HALVINGS_INIT = 2;
+    address public constant EMISSION_STARTER_INIT = 0x1B272dC2635CFBE67116434CdBfD7525f8F5196F;
 
     uint256 public emissionRatePerBlock;
     uint256 public emissionHalvingPeriod;
@@ -78,6 +78,8 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     uint256 public emissionStartBlock;
     uint256 public emissionLastBlock;
     uint256 public totalEmitted;
+    address public emissionStarter;
+    uint256 public emissionStartTime;
 
     struct Validator {
         address consensusAddress;
@@ -144,6 +146,8 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     event finalityRewardDeposit(address indexed validator, uint256 amount);
     event deprecatedFinalityRewardDeposit(address indexed validator, uint256 amount);
     event emissionDistributed(uint256 epochEmission, uint256 poolRemaining);
+    event emissionStartScheduled(uint256 startTime);
+    event emissionStarted(uint256 startBlock);
 
     /*----------------- init -----------------*/
     function init() external onlyNotInit {
@@ -160,8 +164,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         emissionHalvingPeriod = EMISSION_HALVING_PERIOD_INIT;
         emissionMaxHalvings = EMISSION_MAX_HALVINGS_INIT;
         emissionPoolRemaining = EMISSION_POOL_TOTAL;
-        emissionStartBlock = EMISSION_START_BLOCK_INIT;
-        emissionLastBlock = EMISSION_START_BLOCK_INIT;
+        emissionStarter = EMISSION_STARTER_INIT;
 
         numOfCabinets = INIT_NUM_OF_CABINETS;
         maxNumOfMaintaining = INIT_MAX_NUM_OF_MAINTAINING;
@@ -609,6 +612,19 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         _exitMaintenance(msg.sender, index, miningValidatorCount, true);
     }
 
+    /**
+     * @dev Schedule the emission to start at the first breathe block of the next epoch.
+     *      Can be called once, by the emission starter only.
+     */
+    function startEmission() external onlyInit {
+        require(msg.sender == emissionStarter, "the message sender must be the emission starter");
+        require(emissionStartTime == 0, "emission already started");
+
+        uint256 epochInterval = IStakeHub(STAKE_HUB_ADDR).BREATHE_BLOCK_INTERVAL();
+        emissionStartTime = block.timestamp.div(epochInterval).add(1).mul(epochInterval);
+        emit emissionStartScheduled(emissionStartTime);
+    }
+
     /*----------------- Param update -----------------*/
     function updateParam(
         string calldata key,
@@ -704,6 +720,11 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             uint256 newMax = BytesToTypes.bytesToUint256(32, value);
             require(newMax >= 1 && newMax <= 20, "emissionMaxHalvings out of range");
             emissionMaxHalvings = newMax;
+        } else if (Memory.compareStrings(key, "emissionStarter")) {
+            require(value.length == 20, "length of emissionStarter mismatch");
+            address newStarter = BytesToTypes.bytesToAddress(20, value);
+            require(newStarter != address(0), "emissionStarter is zero address");
+            emissionStarter = newStarter;
         } else {
             require(false, "unknown param");
         }
@@ -714,6 +735,18 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     function _accrueEmission() private {
         if (emissionPoolRemaining == 0) {
+            return;
+        }
+
+        // the schedule has no clock until the starter has scheduled it and the epoch it points at has begun;
+        // the first breathe block of that epoch becomes block zero of the schedule and pays nothing yet
+        if (emissionStartBlock == 0) {
+            if (emissionStartTime == 0 || block.timestamp < emissionStartTime) {
+                return;
+            }
+            emissionStartBlock = block.number;
+            emissionLastBlock = block.number;
+            emit emissionStarted(block.number);
             return;
         }
 

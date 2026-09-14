@@ -21,6 +21,7 @@ presale_owner: str
 
 DEFAULT_ENS_REGISTRY_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
 DEFAULT_PRESALE_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
+DEFAULT_EMISSION_STARTER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
 
 main = typer.Typer()
 
@@ -170,13 +171,14 @@ def generate_system():
     replace_parameter(contract, "uint16 public constant l2pChainID", f"0x{hex_chain_id}")
 
 
-def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
+def generate_validator_set(init_validator_set_bytes, init_burn_ratio, emission_starter):
     contract = "L2PValidatorSet.sol"
     backup_file(
         os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
     )
 
     replace_parameter(contract, "uint256 public constant INIT_BURN_RATIO", f"{init_burn_ratio}")
+    replace_parameter(contract, "address public constant EMISSION_STARTER_INIT", f"{emission_starter}")
     replace(
         contract, r"bytes public constant INIT_VALIDATORSET_BYTES =[^;]*;",
         f"bytes public constant INIT_VALIDATORSET_BYTES =\n        hex\"{init_validator_set_bytes}\";"
@@ -256,7 +258,7 @@ def mainnet():
     generate_system()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
-    generate_validator_set(init_validator_set_bytes, init_burn_ratio)
+    generate_validator_set(init_validator_set_bytes, init_burn_ratio, DEFAULT_EMISSION_STARTER)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector
@@ -309,7 +311,7 @@ def testnet():
     generate_system()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
-    generate_validator_set(init_validator_set_bytes, init_burn_ratio)
+    generate_validator_set(init_validator_set_bytes, init_burn_ratio, DEFAULT_EMISSION_STARTER)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector
@@ -358,7 +360,9 @@ def dev(
     dev_ens_registry_owner: Annotated[
         str, typer.Option(help="owner of the ENS root node in genesis")] = DEFAULT_ENS_REGISTRY_OWNER,
     presale_duration: Annotated[str, typer.Option(help="PRESALE_DURATION of L2PPresale")] = "365 days",
-    dev_presale_owner: Annotated[str, typer.Option(help="owner of L2PPresale in genesis")] = DEFAULT_PRESALE_OWNER
+    dev_presale_owner: Annotated[str, typer.Option(help="owner of L2PPresale in genesis")] = DEFAULT_PRESALE_OWNER,
+    dev_emission_starter: Annotated[
+        str, typer.Option(help="EMISSION_STARTER_INIT of L2PValidatorSet")] = DEFAULT_EMISSION_STARTER
 ):
     global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
     network = "dev"
@@ -385,7 +389,7 @@ def dev(
     generate_system()
     generate_gov_hub()
     generate_slash_indicator(misdemeanor_threshold, felony_threshold, init_felony_slash_scope)
-    generate_validator_set(init_validator_set_bytes, init_burn_ratio)
+    generate_validator_set(init_validator_set_bytes, init_burn_ratio, dev_emission_starter)
     generate_stake_hub(
         breathe_block_interval, max_elected_validators, unbond_period, downtime_jail_time, felony_jail_time,
         stake_hub_protector

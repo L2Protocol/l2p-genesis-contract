@@ -9,6 +9,8 @@ contract EmissionScheduleTest is Deployer {
     event systemTransfer(uint256 amount);
     event RewardDistributed(address indexed operatorAddress, uint256 reward);
     event emissionDistributed(uint256 epochEmission, uint256 poolRemaining);
+    event emissionStartScheduled(uint256 startTime);
+    event emissionStarted(uint256 startBlock);
     event failReasonWithStr(string message);
 
     address public coinbase;
@@ -41,6 +43,17 @@ contract EmissionScheduleTest is Deployer {
         stdstore.target(address(l2pValidatorSet)).sig("emissionStartBlock()").checked_write(startBlock);
         stdstore.target(address(l2pValidatorSet)).sig("emissionLastBlock()").checked_write(lastBlock);
         vm.deal(address(l2pValidatorSet), poolRemaining);
+    }
+
+    // the fork was initialised by an older build with a fixed start block and no starter, so the tests
+    // that exercise startEmission first put the schedule back into its not-started genesis state
+    function _setEmissionNotStarted(
+        address starter
+    ) internal {
+        stdstore.target(address(l2pValidatorSet)).sig("emissionStarter()").checked_write(starter);
+        stdstore.target(address(l2pValidatorSet)).sig("emissionStartTime()").checked_write(uint256(0));
+        stdstore.target(address(l2pValidatorSet)).sig("emissionStartBlock()").checked_write(uint256(0));
+        stdstore.target(address(l2pValidatorSet)).sig("emissionLastBlock()").checked_write(uint256(0));
     }
 
     function _registerValidators(
@@ -90,8 +103,10 @@ contract EmissionScheduleTest is Deployer {
         assertEq(fresh.emissionRatePerBlock(), fresh.EMISSION_RATE_PER_BLOCK_INIT());
         assertEq(fresh.emissionHalvingPeriod(), fresh.EMISSION_HALVING_PERIOD_INIT());
         assertEq(fresh.emissionMaxHalvings(), fresh.EMISSION_MAX_HALVINGS_INIT());
-        assertEq(fresh.emissionStartBlock(), fresh.EMISSION_START_BLOCK_INIT());
-        assertEq(fresh.emissionLastBlock(), fresh.EMISSION_START_BLOCK_INIT());
+        assertEq(fresh.emissionStartBlock(), 0);
+        assertEq(fresh.emissionLastBlock(), 0);
+        assertEq(fresh.emissionStartTime(), 0);
+        assertEq(fresh.emissionStarter(), fresh.EMISSION_STARTER_INIT());
         assertEq(fresh.totalEmitted(), 0);
         assertEq(fresh.numOfCabinets(), fresh.INIT_NUM_OF_CABINETS());
         assertEq(fresh.maxNumOfMaintaining(), fresh.INIT_MAX_NUM_OF_MAINTAINING());
@@ -168,6 +183,192 @@ contract EmissionScheduleTest is Deployer {
         // every emitted L2P reached a validator's credit contract
         assertEq(paidToValidators, l2pValidatorSet.totalEmitted(), "emitted amount did not reach validators");
         assertGt(l2pValidatorSet.totalEmitted(), 0);
+    }
+
+    /*----------------- start -----------------*/
+
+    function testStartEmissionOnlyByStarterAndOnlyOnce() public {
+        address starter = _getNextUserAddress();
+        _setEmissionNotStarted(starter);
+        uint256 interval = stakeHub.BREATHE_BLOCK_INTERVAL();
+
+        // somewhere in the middle of an epoch
+        vm.warp((block.timestamp / interval) * interval + interval / 2);
+        uint256 expectedStart = (block.timestamp / interval + 1) * interval;
+
+        vm.prank(_getNextUserAddress());
+        vm.expectRevert(bytes("the message sender must be the emission starter"));
+        l2pValidatorSet.startEmission();
+        assertEq(l2pValidatorSet.emissionStartTime(), 0);
+
+        vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
+        emit emissionStartScheduled(expectedStart);
+        vm.prank(starter);
+        l2pValidatorSet.startEmission();
+        assertEq(l2pValidatorSet.emissionStartTime(), expectedStart);
+        // the schedule itself only gets its block zero at the breathe block of the next epoch
+        assertEq(l2pValidatorSet.emissionStartBlock(), 0);
+
+        vm.prank(starter);
+        vm.expectRevert(bytes("emission already started"));
+        l2pValidatorSet.startEmission();
+        assertEq(l2pValidatorSet.emissionStartTime(), expectedStart);
+    }
+
+    function testStartEmissionJustBeforeEpochBoundarySchedulesTheNextOne() public {
+        address starter = _getNextUserAddress();
+        _setEmissionNotStarted(starter);
+        uint256 interval = stakeHub.BREATHE_BLOCK_INTERVAL();
+
+        uint256 boundary = (block.timestamp / interval + 1) * interval;
+        vm.warp(boundary - 1);
+        vm.prank(starter);
+        l2pValidatorSet.startEmission();
+        assertEq(l2pValidatorSet.emissionStartTime(), boundary);
+    }
+
+    function testStartEmissionExactlyOnEpochBoundarySchedulesTheOneAfter() public {
+        address starter = _getNextUserAddress();
+        _setEmissionNotStarted(starter);
+        uint256 interval = stakeHub.BREATHE_BLOCK_INTERVAL();
+
+        uint256 boundary = (block.timestamp / interval + 1) * interval;
+        vm.warp(boundary);
+        vm.prank(starter);
+        l2pValidatorSet.startEmission();
+        assertEq(l2pValidatorSet.emissionStartTime(), boundary + interval);
+    }
+
+    function testEmissionDoesNothingUntilStarted() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(1);
+        _setEmissionNotStarted(_getNextUserAddress());
+        _setEmissionState({
+            rate: 100 ether,
+            halvingPeriod: 1_000_000,
+            maxHalvings: 5,
+            poolRemaining: 1_000_000 ether,
+            startBlock: 0,
+            lastBlock: 0
+        });
+
+        uint256 pooledBefore = _pooled(operatorAddrs[0]);
+
+        // a year of epochs without a start call must leave the pool untouched
+        for (uint256 i = 1; i <= 3; ++i) {
+            vm.roll(block.number + 57_600);
+            vm.warp(block.timestamp + 1 days);
+            vm.prank(coinbase);
+            l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+        }
+
+        assertEq(l2pValidatorSet.emissionStartBlock(), 0);
+        assertEq(l2pValidatorSet.emissionLastBlock(), 0);
+        assertEq(l2pValidatorSet.emissionPoolRemaining(), 1_000_000 ether);
+        assertEq(l2pValidatorSet.totalEmitted(), 0);
+        assertEq(_pooled(operatorAddrs[0]), pooledBefore);
+    }
+
+    function testEmissionStartsAtFirstBreatheBlockOfNextEpoch() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(1);
+        address starter = _getNextUserAddress();
+        _setEmissionNotStarted(starter);
+        _setEmissionState({
+            rate: 100 ether,
+            halvingPeriod: 1_000_000,
+            maxHalvings: 5,
+            poolRemaining: 1_000_000 ether,
+            startBlock: 0,
+            lastBlock: 0
+        });
+        uint256 interval = stakeHub.BREATHE_BLOCK_INTERVAL();
+
+        vm.warp((block.timestamp / interval) * interval + interval / 2);
+        vm.prank(starter);
+        l2pValidatorSet.startEmission();
+        uint256 startTime = l2pValidatorSet.emissionStartTime();
+
+        // the last block of the current epoch: still nothing
+        vm.roll(block.number + 100);
+        vm.warp(startTime - 1);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+        assertEq(l2pValidatorSet.emissionStartBlock(), 0);
+        assertEq(l2pValidatorSet.totalEmitted(), 0);
+
+        // the breathe block of the next epoch becomes block zero of the schedule; it pays nothing itself
+        vm.roll(block.number + 1);
+        vm.warp(startTime);
+        uint256 breatheBlock = block.number;
+        uint256 pooledBefore = _pooled(operatorAddrs[0]);
+
+        vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
+        emit emissionStarted(breatheBlock);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(l2pValidatorSet.emissionStartBlock(), breatheBlock);
+        assertEq(l2pValidatorSet.emissionLastBlock(), breatheBlock);
+        assertEq(l2pValidatorSet.totalEmitted(), 0);
+        assertEq(_pooled(operatorAddrs[0]), pooledBefore);
+
+        // the epoch after that is the first one paid out, for every block since the breathe block
+        vm.roll(breatheBlock + 10);
+        vm.warp(startTime + interval);
+        uint256 expectedEmission = 100 ether * 10;
+
+        vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
+        emit emissionDistributed(expectedEmission, 1_000_000 ether - expectedEmission);
+        vm.expectEmit(true, false, false, true, address(stakeHub));
+        emit RewardDistributed(operatorAddrs[0], expectedEmission);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(l2pValidatorSet.emissionLastBlock(), breatheBlock + 10);
+        assertEq(l2pValidatorSet.totalEmitted(), expectedEmission);
+        assertEq(_pooled(operatorAddrs[0]), pooledBefore + expectedEmission);
+    }
+
+    function testEmissionHalvingWindowsCountFromTheActualStartBlock() public {
+        (, address[] memory consensusAddrs, uint64[] memory votingPowers, bytes[] memory voteAddrs) =
+            _registerValidators(1);
+        address starter = _getNextUserAddress();
+        _setEmissionNotStarted(starter);
+        _setEmissionState({
+            rate: 800 ether,
+            halvingPeriod: 100,
+            maxHalvings: 2,
+            poolRemaining: 1_000_000 ether,
+            startBlock: 0,
+            lastBlock: 0
+        });
+        uint256 interval = stakeHub.BREATHE_BLOCK_INTERVAL();
+
+        vm.prank(starter);
+        l2pValidatorSet.startEmission();
+        vm.roll(block.number + 5_000);
+        vm.warp(l2pValidatorSet.emissionStartTime());
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+        uint256 startBlock = l2pValidatorSet.emissionStartBlock();
+        assertEq(startBlock, block.number);
+
+        // 150 blocks in: 100 at full rate, 50 at half rate, measured from the start block and not from genesis
+        vm.roll(startBlock + 150);
+        vm.warp(block.timestamp + interval);
+        vm.expectEmit(false, false, false, true, address(l2pValidatorSet));
+        emit emissionDistributed(800 ether * 100 + 400 ether * 50, 1_000_000 ether - 800 ether * 100 - 400 ether * 50);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
     }
 
     /*----------------- accrual -----------------*/
@@ -573,5 +774,37 @@ contract EmissionScheduleTest is Deployer {
         emit failReasonWithStr("emissionMaxHalvings out of range");
         _updateParamByGovHub(key, value, address(l2pValidatorSet));
         assertEq(l2pValidatorSet.emissionMaxHalvings(), 10);
+    }
+
+    function testEmissionStarterGovernance() public {
+        address original = _getNextUserAddress();
+        _setEmissionNotStarted(original);
+        address replacement = _getNextUserAddress();
+
+        bytes memory key = "emissionStarter";
+        bytes memory value = abi.encodePacked(replacement);
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionStarter(), replacement);
+
+        value = abi.encodePacked(address(0));
+        vm.expectEmit(false, false, false, true, address(govHub));
+        emit failReasonWithStr("emissionStarter is zero address");
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionStarter(), replacement);
+
+        value = abi.encode(replacement);
+        vm.expectEmit(false, false, false, true, address(govHub));
+        emit failReasonWithStr("length of emissionStarter mismatch");
+        _updateParamByGovHub(key, value, address(l2pValidatorSet));
+        assertEq(l2pValidatorSet.emissionStarter(), replacement);
+
+        // the old starter lost the right, the new one has it
+        vm.prank(original);
+        vm.expectRevert(bytes("the message sender must be the emission starter"));
+        l2pValidatorSet.startEmission();
+
+        vm.prank(replacement);
+        l2pValidatorSet.startEmission();
+        assertGt(l2pValidatorSet.emissionStartTime(), block.timestamp);
     }
 }

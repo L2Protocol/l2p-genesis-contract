@@ -10,5 +10,6 @@ interface IStakeHub {
     function getValidatorCreditContract(address validator) external view returns (address);
     function getValidatorVoteAddress(address validator) external view returns (bytes memory);
     function maxElectedValidators() external view returns (uint256);
+    function BREATHE_BLOCK_INTERVAL() external view returns (uint256);
     function distributeReward(address validator) external payable;
 }

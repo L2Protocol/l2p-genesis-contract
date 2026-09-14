@@ -176,6 +176,40 @@ cast call 0x0000000000000000000000000000000000003000 "blocksUntilNextEra()(uint2
 
 Tests: `forge test --match-path test/L2PPresale.t.sol`. The ABI is in `abi/l2ppresale.abi`.
 
+## Starting the emission schedule
+
+`L2PValidatorSet` pays the validator emission out of a 50,000,000,000 L2P pool that sits in the
+contract from genesis. The schedule does not run by itself: it has no clock until the emission
+starter calls `startEmission()`. That call does not start anything in the same block. It records
+the next epoch boundary (`emissionStartTime`, the next multiple of `BREATHE_BLOCK_INTERVAL` from
+StakeHub, so 00:00 UTC with the mainnet setting of one day) and the first breathe block at or after
+that moment becomes block zero of the schedule (`emissionStartBlock`). That breathe block pays
+nothing itself; the epoch that follows it is the first one paid out, and the halving windows count
+from `emissionStartBlock`. `startEmission()` works once.
+
+Only `emissionStarter` may call it. It is `EMISSION_STARTER_INIT` at genesis, set by the generator
+to `DEFAULT_EMISSION_STARTER` in `scripts/generate.py` for mainnet and testnet and to
+`--dev-emission-starter` for dev. Governance can move the right to another address afterwards with
+the `emissionStarter` parameter, the usual way (GovHub `updateParam`, a 20-byte address), which is
+the recovery path if the key is ever lost, since genesis cannot be redone.
+
+| Call                   | Returns                                                                  |
+|------------------------|--------------------------------------------------------------------------|
+| `emissionStarter()`    | the address that may call `startEmission()`                              |
+| `emissionStartTime()`  | the epoch boundary the schedule starts at, `0` until `startEmission()`   |
+| `emissionStartBlock()` | block zero of the schedule, `0` until the breathe block of that epoch    |
+| `totalEmitted()`       | what has been paid out so far                                            |
+
+```shell script
+# has it been scheduled, and for when?
+cast call 0x0000000000000000000000000000000000001000 "emissionStartTime()(uint256)" --rpc-url $RPC_L2P
+
+# schedule it for the next epoch (emission starter only, once)
+cast send 0x0000000000000000000000000000000000001000 "startEmission()" --private-key $STARTER_KEY --rpc-url $RPC_L2P
+```
+
+Tests: `forge test --fork-url $RPC_L2P --match-path test/EmissionSchedule.t.sol`.
+
 ## How to deploy ENS and the .l2p TLD
 
 This walks from a clean checkout to a working `.l2p` registrar that anyone can register names on.
