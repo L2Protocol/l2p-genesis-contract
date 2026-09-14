@@ -116,6 +116,66 @@ The transaction value is `minSelfDelegationL2P + LOCK_AMOUNT` (7,000,000 + 3,500
 the current genesis settings), both read from the chain, unless `VALIDATOR_SELF_DELEGATION`
 is set to a higher amount.
 
+## The presale schedule
+
+`contracts/L2PPresale.sol` holds the presale schedule and is placed in genesis at
+`0x0000000000000000000000000000000000003000`. It is a read-only schedule: five consecutive eras of
+equal length, each offering 1,500,000,000 L2P at a USD price that steps up per era. Selling itself
+is not done by this contract; it only answers what the price and the era are at any block.
+
+| Era | Price per L2P | `priceUsd` | L2P on offer  | Raises    |
+|-----|---------------|------------|---------------|-----------|
+| 0   | $0.0001       | 10000      | 1,500,000,000 | $150,000  |
+| 1   | $0.00011      | 11000      | 1,500,000,000 | $165,000  |
+| 2   | $0.00012      | 12000      | 1,500,000,000 | $180,000  |
+| 3   | $0.00013      | 13000      | 1,500,000,000 | $195,000  |
+| 4   | $0.00014      | 14000      | 1,500,000,000 | $210,000  |
+
+Prices use 8 decimals (`PRICE_DECIMALS`), the same convention as `L2PUsdOracle`. The five eras
+together last `PRESALE_DURATION` (365 days) of blocks at `BLOCK_INTERVAL_MS` (1500 ms): 21,024,000
+blocks, so 4,204,800 blocks (`ERA_BLOCKS`) per era. Both constants are compiled in, and the dev
+genesis shortens the presale to 50 minutes (`--presale-duration` in `generate:dev`) so an era
+boundary is reachable in a local run.
+
+The schedule has no clock until the owner calls `start()`. That block becomes the first block of era
+0 and every era boundary follows from it. `start()` works once; the owner cannot renounce ownership
+before it has been called, since genesis cannot be redone. Ownership transfer is two-step
+(`transferOwnership` followed by `acceptOwnership` from the new owner).
+
+The owner is written into storage slot 0 by the genesis generator, the way the ENS root owner is.
+It is `DEFAULT_PRESALE_OWNER` in `scripts/generate.py` for mainnet and testnet, and
+`--dev-presale-owner` for dev.
+
+| Call                          | Returns                                                                   |
+|-------------------------------|---------------------------------------------------------------------------|
+| `status()`                    | `0` NotStarted, `1` Active, `2` Ended                                     |
+| `currentPriceUsd()`           | price of the current era                                                  |
+| `currentEraIndex()`           | zero-based index of the current era                                       |
+| `currentEra()`                | `(startBlock, endBlock, priceUsd, supply)` of the current era             |
+| `blocksUntilNextEra()`        | blocks until the next era begins; in the last era, until the presale ends |
+| `eras()`                      | all five eras; block ranges are `0` until `start()` has been called       |
+| `era(index)`                  | one era                                                                   |
+| `eraIndexAt(blockNumber)`     | the era a given block falls in                                            |
+| `startBlock()` / `endBlock()` | first and last block of the presale, `0` before the start                 |
+
+The `current*` and `blocksUntilNextEra()` views revert with `PresaleNotActive(status)` outside the
+presale, so check `status()` first when rendering a page.
+
+```shell script
+# is it running?
+cast call 0x0000000000000000000000000000000000003000 "status()(uint8)" --rpc-url $RPC_L2P
+
+# start it (owner only, once)
+cast send 0x0000000000000000000000000000000000003000 "start()" --private-key $OWNER_KEY --rpc-url $RPC_L2P
+
+# current price, era and blocks left in it
+cast call 0x0000000000000000000000000000000000003000 "currentPriceUsd()(uint256)" --rpc-url $RPC_L2P
+cast call 0x0000000000000000000000000000000000003000 "currentEraIndex()(uint256)" --rpc-url $RPC_L2P
+cast call 0x0000000000000000000000000000000000003000 "blocksUntilNextEra()(uint256)" --rpc-url $RPC_L2P
+```
+
+Tests: `forge test --match-path test/L2PPresale.t.sol`. The ABI is in `abi/l2ppresale.abi`.
+
 ## How to deploy ENS and the .l2p TLD
 
 This walks from a clean checkout to a working `.l2p` registrar that anyone can register names on.

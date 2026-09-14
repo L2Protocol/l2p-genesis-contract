@@ -17,8 +17,10 @@ network: str
 chain_id: int
 hex_chain_id: str
 ens_registry_owner: str
+presale_owner: str
 
 DEFAULT_ENS_REGISTRY_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
+DEFAULT_PRESALE_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
 
 main = typer.Typer()
 
@@ -195,6 +197,16 @@ def generate_validator_set(init_validator_set_bytes, init_burn_ratio):
         )
 
 
+def generate_presale(block_interval, presale_duration):
+    contract = "L2PPresale.sol"
+    backup_file(
+        os.path.join(work_dir, "contracts", contract), os.path.join(work_dir, "contracts", contract[:-4] + ".bak")
+    )
+
+    replace_parameter(contract, "uint256 public constant BLOCK_INTERVAL_MS", f"{block_interval}")
+    replace_parameter(contract, "uint256 public constant PRESALE_DURATION", f"{presale_duration}")
+
+
 def generate_gov_hub():
     contract = "GovHub.sol"
     backup_file(
@@ -204,15 +216,16 @@ def generate_gov_hub():
 
 def generate_genesis(output="./genesis.json"):
     subprocess.run(["forge", "build"], cwd=work_dir, check=True)
-    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--ensRegistryOwner", f"{ens_registry_owner}", "--output", f"{output}"], cwd=work_dir, check=True)
+    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--ensRegistryOwner", f"{ens_registry_owner}", "--presaleOwner", f"{presale_owner}", "--output", f"{output}"], cwd=work_dir, check=True)
 
 
 @main.command(help="Generate contracts for L2P mainnet")
 def mainnet():
-    global network, chain_id, hex_chain_id, ens_registry_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
     network = "mainnet"
     chain_id = 12216
     ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
+    presale_owner = DEFAULT_PRESALE_OWNER
     hex_chain_id = convert_chain_id(chain_id)
 
     # mainnet init data
@@ -235,6 +248,7 @@ def mainnet():
     propose_start_threshold = "35_000_000 ether"
     init_min_period_after_quorum = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)"
     init_minimal_delay = "24 hours"
+    presale_duration = "365 days"
 
     stake_hub_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
     governor_protector = "0xC27bD3c844842C0D376bF419087F9E98231D4693"
@@ -252,6 +266,7 @@ def mainnet():
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
+    generate_presale(block_interval, presale_duration)
 
     generate_genesis()
     print("Generate genesis of mainnet successfully")
@@ -259,9 +274,10 @@ def mainnet():
 
 @main.command(help="Generate contracts for L2P testnet")
 def testnet():
-    global network, chain_id, hex_chain_id, ens_registry_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
     network = "testnet"
     ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
+    presale_owner = DEFAULT_PRESALE_OWNER
     chain_id = 97
     hex_chain_id = convert_chain_id(chain_id)
 
@@ -285,6 +301,7 @@ def testnet():
     propose_start_threshold = "35_000_000 ether"
     init_min_period_after_quorum = "uint64(1 hours * 1000 / BLOCK_INTERVAL_MS)"
     init_minimal_delay = "6 hours"
+    presale_duration = "365 days"
 
     stake_hub_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
     governor_protector = "0x30151DA466EC8AB345BEF3d6983023E050fb0673"
@@ -302,6 +319,7 @@ def testnet():
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
+    generate_presale(block_interval, presale_duration)
 
     generate_genesis("./genesis-testnet.json")
     print("Generate genesis of testnet successfully")
@@ -338,11 +356,14 @@ def dev(
         typer.Option(help="INIT_MIN_PERIOD_AFTER_QUORUM of L2PGovernor")] = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)",
     init_minimal_delay: Annotated[str, typer.Option(help="INIT_MINIMAL_DELAY of L2PTimelock")] = "24 hours",
     dev_ens_registry_owner: Annotated[
-        str, typer.Option(help="owner of the ENS root node in genesis")] = DEFAULT_ENS_REGISTRY_OWNER
+        str, typer.Option(help="owner of the ENS root node in genesis")] = DEFAULT_ENS_REGISTRY_OWNER,
+    presale_duration: Annotated[str, typer.Option(help="PRESALE_DURATION of L2PPresale")] = "365 days",
+    dev_presale_owner: Annotated[str, typer.Option(help="owner of L2PPresale in genesis")] = DEFAULT_PRESALE_OWNER
 ):
-    global network, chain_id, hex_chain_id, ens_registry_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
     network = "dev"
     ens_registry_owner = dev_ens_registry_owner
+    presale_owner = dev_presale_owner
     chain_id = dev_chain_id
     hex_chain_id = convert_chain_id(chain_id)
 
@@ -374,6 +395,7 @@ def dev(
         propose_start_threshold, init_min_period_after_quorum, governor_protector
     )
     generate_timelock(init_minimal_delay)
+    generate_presale(block_interval, presale_duration)
 
     generate_genesis("./genesis-dev.json")
     print("Generate genesis of dev environment successfully")
