@@ -32,6 +32,53 @@ interface ICreateX {
     ) external view returns (address);
 }
 
+interface IERC1820Registry {
+    function setInterfaceImplementer(
+        address account,
+        bytes32 interfaceHash,
+        address implementer
+    ) external;
+    function getInterfaceImplementer(
+        address account,
+        bytes32 interfaceHash
+    ) external view returns (address);
+    function setManager(
+        address account,
+        address newManager
+    ) external;
+    function getManager(
+        address account
+    ) external view returns (address);
+    function interfaceHash(
+        string calldata interfaceName
+    ) external pure returns (bytes32);
+}
+
+interface IImmutableCreate2Factory {
+    function safeCreate2(
+        bytes32 salt,
+        bytes calldata initializationCode
+    ) external payable returns (address);
+    function findCreate2Address(
+        bytes32 salt,
+        bytes calldata initCode
+    ) external view returns (address);
+    function hasBeenDeployed(
+        address deploymentAddress
+    ) external view returns (bool);
+}
+
+contract ERC1820Implementer {
+    bytes32 internal constant ERC1820_ACCEPT_MAGIC = keccak256("ERC1820_ACCEPT_MAGIC");
+
+    function canImplementInterfaceForAddress(
+        bytes32,
+        address
+    ) external pure returns (bytes32) {
+        return ERC1820_ACCEPT_MAGIC;
+    }
+}
+
 contract Greeter {
     function greet() external pure returns (string memory) {
         return "hello";
@@ -45,11 +92,16 @@ contract GenesisPredeploysTest is Test {
     address internal constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
     address internal constant DETERMINISTIC_DEPLOYMENT_PROXY = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
     address internal constant SAFE_SINGLETON_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
+    address internal constant ERC1820_REGISTRY = 0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24;
+    address internal constant IMMUTABLE_CREATE2_FACTORY = 0x0000000000FFe8B47B3e2130213B802212439497;
 
     // Runtime code hashes on Ethereum, BSC, Polygon, Arbitrum, Base and Optimism.
     bytes32 internal constant CREATEX_CODE_HASH = 0xbd8a7ea8cfca7b4e5f5041d7d4b17bc317c5ce42cfbc42066a00cf26b43eb53f;
     bytes32 internal constant CREATE2_FACTORY_CODE_HASH =
         0x2fa86add0aed31f33a762c9d88e807c475bd51d0f52bd0955754b2608f7e4989;
+    bytes32 internal constant ERC1820_CODE_HASH = 0xf0aa940bb32e37c5f7268b53acc48c7cdd148cd0fc196f30faa00a4d66c0443a;
+    bytes32 internal constant IMMUTABLE_CREATE2_FACTORY_CODE_HASH =
+        0x767db8f19b71e367540fa372e8e81e4dcb7ca8feede0ae58a0c0bd08b7320dee;
 
     address internal alice = address(0xA11CE);
 
@@ -73,18 +125,26 @@ contract GenesisPredeploysTest is Test {
         _load(json, CREATEX);
         _load(json, DETERMINISTIC_DEPLOYMENT_PROXY);
         _load(json, SAFE_SINGLETON_FACTORY);
+        _load(json, ERC1820_REGISTRY);
+        _load(json, IMMUTABLE_CREATE2_FACTORY);
 
         assertEq(CREATEX.codehash, CREATEX_CODE_HASH, "CreateX code");
         assertEq(
             DETERMINISTIC_DEPLOYMENT_PROXY.codehash, CREATE2_FACTORY_CODE_HASH, "deterministic deployment proxy code"
         );
         assertEq(SAFE_SINGLETON_FACTORY.codehash, CREATE2_FACTORY_CODE_HASH, "Safe singleton factory code");
+        assertEq(ERC1820_REGISTRY.codehash, ERC1820_CODE_HASH, "ERC-1820 registry code");
+        assertEq(
+            IMMUTABLE_CREATE2_FACTORY.codehash, IMMUTABLE_CREATE2_FACTORY_CODE_HASH, "ImmutableCreate2Factory code"
+        );
         assertEq(WL2P.code, vm.getDeployedCode("WL2P.sol:WL2P"), "WL2P code differs from the build");
 
         _checkWL2P();
         _checkCreateX();
         _checkCreate2Factory(DETERMINISTIC_DEPLOYMENT_PROXY);
         _checkCreate2Factory(SAFE_SINGLETON_FACTORY);
+        _checkERC1820Registry();
+        _checkImmutableCreate2Factory();
     }
 
     function _load(
@@ -152,6 +212,46 @@ contract GenesisPredeploysTest is Test {
 
         address expected = vm.computeCreate2Address(salt, keccak256(initCode), factory);
         assertEq(address(bytes20(result)), expected);
+        assertEq(Greeter(expected).greet(), "hello");
+    }
+
+    function _checkERC1820Registry() internal {
+        IERC1820Registry registry = IERC1820Registry(ERC1820_REGISTRY);
+        bytes32 interfaceHash = registry.interfaceHash("ERC777TokensRecipient");
+        assertEq(interfaceHash, keccak256("ERC777TokensRecipient"));
+
+        assertEq(registry.getManager(alice), alice);
+        assertEq(registry.getInterfaceImplementer(alice, interfaceHash), address(0));
+
+        address implementer = address(new ERC1820Implementer());
+        vm.prank(alice);
+        registry.setInterfaceImplementer(alice, interfaceHash, implementer);
+        assertEq(registry.getInterfaceImplementer(alice, interfaceHash), implementer);
+
+        vm.prank(alice);
+        registry.setManager(alice, address(0xB0B));
+        assertEq(registry.getManager(alice), address(0xB0B));
+
+        vm.prank(alice);
+        vm.expectRevert("Not the manager");
+        registry.setInterfaceImplementer(alice, interfaceHash, address(0));
+    }
+
+    function _checkImmutableCreate2Factory() internal {
+        IImmutableCreate2Factory factory = IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY);
+        bytes memory initCode = type(Greeter).creationCode;
+        bytes32 salt = bytes32(abi.encodePacked(alice, bytes12(keccak256("l2p-genesis"))));
+
+        address expected = vm.computeCreate2Address(salt, keccak256(initCode), IMMUTABLE_CREATE2_FACTORY);
+        assertEq(factory.findCreate2Address(salt, initCode), expected);
+
+        vm.prank(address(0xB0B));
+        vm.expectRevert("Invalid salt - first 20 bytes of the salt must match calling address.");
+        factory.safeCreate2(salt, initCode);
+
+        vm.prank(alice);
+        assertEq(factory.safeCreate2(salt, initCode), expected);
+        assertTrue(factory.hasBeenDeployed(expected));
         assertEq(Greeter(expected).greet(), "hello");
     }
 }

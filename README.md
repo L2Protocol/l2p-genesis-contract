@@ -222,24 +222,34 @@ be bootstrapped with keyless or per-chain-signed transactions after launch.
 | CreateX                          | `0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed` | runtime code in the template   |
 | Deterministic deployment proxy   | `0x4e59b44847b379578588920cA78FbF26c0B4956C` | runtime code in the template   |
 | Safe singleton factory           | `0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7` | runtime code in the template   |
+| ERC-1820 registry                | `0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24` | runtime code in the template   |
+| ImmutableCreate2Factory          | `0x0000000000FFe8B47B3e2130213B802212439497` | runtime code in the template   |
 
 - **WL2P** is the WETH9 source verified on Ethereum mainnet (`0xC02aaA39…6Cc2`, solc 0.4.19) with
   only the contract name, `name` and `symbol` changed. Its `name`, `symbol` and `decimals` live in
   storage slots 0, 1 and 2, so the template writes those slots; without them the token would have
   an empty name and 0 decimals.
 - **CreateX**, the **deterministic deployment proxy** (Arachnid's, the default CREATE2 deployer of
-  Foundry and the route for Permit2 and the ERC-4337 EntryPoint) and the **Safe singleton factory**
-  carry no chain-specific immutables. Their runtime code is copied verbatim from Ethereum and is
+  Foundry and the route for Permit2 and the ERC-4337 EntryPoint), the **Safe singleton factory**, the
+  **ERC-1820 registry** (interface registry used by ERC-777 tokens) and the **ImmutableCreate2Factory**
+  (0age's, the route for OpenSea's Seaport and ConduitController) carry no chain-specific immutables
+  and start with empty storage. Their runtime code is copied verbatim from Ethereum and is
   identical on Ethereum, BSC, Polygon, Arbitrum, Base and Optimism. The deterministic deployment
   proxy and the Safe singleton factory are the same code at different addresses.
-- With these in place, Permit2, the ERC-4337 EntryPoint and the Safe contracts can be deployed to
-  their canonical addresses with ordinary transactions, and `l2p-swap` deploys through CreateX like
-  on every other chain.
+- The ERC-1820 registry and the ImmutableCreate2Factory are normally bootstrapped with pre-EIP-155
+  keyless transactions, which L2P nodes reject over RPC unless started with
+  `--rpc.allow-unprotected-txs`. Genesis avoids that.
+- With these in place, Permit2, the ERC-4337 EntryPoint, the Safe contracts, Seaport 1.6 and the
+  ConduitController can be deployed to their canonical addresses with ordinary transactions, and
+  `l2p-swap` deploys through CreateX like on every other chain. Seaport itself does not belong in
+  genesis: it keeps the chain id and EIP-712 domain separator in immutables, so its runtime code
+  differs per chain.
 
 `test/GenesisPredeploys.t.sol` loads these accounts from `genesis.json`, `genesis-testnet.json` and
 `genesis-dev.json` exactly as written there, compares the code hashes, and exercises them: WL2P
-deposit, transfer and withdraw, and a CREATE2 deployment through each factory. Regenerate the
-genesis files before running it.
+deposit, transfer and withdraw, a CREATE2 deployment through each factory, and registering an
+interface implementer and manager in the ERC-1820 registry. Regenerate the genesis files before
+running it, with `poetry run python -m scripts.generate recover` after each network.
 
 ## How to deploy ENS and the .l2p TLD
 
