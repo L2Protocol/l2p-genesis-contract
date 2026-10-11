@@ -210,6 +210,37 @@ cast send 0x0000000000000000000000000000000000001000 "startEmission()" --private
 
 Tests: `forge test --fork-url $RPC_L2P --match-path test/EmissionSchedule.t.sol`.
 
+## Other predeploys
+
+Besides the system contracts, genesis places a few general-purpose contracts, so that nothing has to
+be bootstrapped with keyless or per-chain-signed transactions after launch.
+
+| Contract                         | Address                                      | Source                         |
+|----------------------------------|----------------------------------------------|--------------------------------|
+| WL2P (wrapped L2P)               | `0x0000000000000000000000000000000000003001` | `contracts/WL2P.sol`, compiled |
+| Multicall3                       | `0xcA11bde05977b3631167028862bE2a173976CA11` | runtime code in the template   |
+| CreateX                          | `0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed` | runtime code in the template   |
+| Deterministic deployment proxy   | `0x4e59b44847b379578588920cA78FbF26c0B4956C` | runtime code in the template   |
+| Safe singleton factory           | `0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7` | runtime code in the template   |
+
+- **WL2P** is the WETH9 source verified on Ethereum mainnet (`0xC02aaA39…6Cc2`, solc 0.4.19) with
+  only the contract name, `name` and `symbol` changed. Its `name`, `symbol` and `decimals` live in
+  storage slots 0, 1 and 2, so the template writes those slots; without them the token would have
+  an empty name and 0 decimals.
+- **CreateX**, the **deterministic deployment proxy** (Arachnid's, the default CREATE2 deployer of
+  Foundry and the route for Permit2 and the ERC-4337 EntryPoint) and the **Safe singleton factory**
+  carry no chain-specific immutables. Their runtime code is copied verbatim from Ethereum and is
+  identical on Ethereum, BSC, Polygon, Arbitrum, Base and Optimism. The deterministic deployment
+  proxy and the Safe singleton factory are the same code at different addresses.
+- With these in place, Permit2, the ERC-4337 EntryPoint and the Safe contracts can be deployed to
+  their canonical addresses with ordinary transactions, and `l2p-swap` deploys through CreateX like
+  on every other chain.
+
+`test/GenesisPredeploys.t.sol` loads these accounts from `genesis.json`, `genesis-testnet.json` and
+`genesis-dev.json` exactly as written there, compares the code hashes, and exercises them: WL2P
+deposit, transfer and withdraw, and a CREATE2 deployment through each factory. Regenerate the
+genesis files before running it.
+
 ## How to deploy ENS and the .l2p TLD
 
 This walks from a clean checkout to a working `.l2p` registrar that anyone can register names on.

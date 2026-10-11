@@ -50,7 +50,8 @@ Promise.all([
   readByteCode('govToken', 'out/GovToken.sol/GovToken.json'),
   readByteCode('timelock', 'out/L2PTimelock.sol/L2PTimelock.json'),
   readByteCode('ensRegistry', 'out/ENSRegistry.sol/ENSRegistry.json'),
-  readByteCode('presale', 'out/L2PPresale.sol/L2PPresale.json')
+  readByteCode('presale', 'out/L2PPresale.sol/L2PPresale.json'),
+  readByteCode('wl2p', 'out/WL2P.sol/WL2P.json')
 ]).then((result) => {
   const data = {
     chainId: program.chainId,
