@@ -8,6 +8,7 @@ interface IStakeHub {
     function consensusToOperator(address validator) external view returns (address);
     function getValidatorConsensusAddress(address validator) external view returns (address);
     function getValidatorCreditContract(address validator) external view returns (address);
+    function getValidatorEmissionInfo(address consensusAddress) external view returns (address creditContract, bool jailed);
     function getValidatorVoteAddress(address validator) external view returns (bytes memory);
     function maxElectedValidators() external view returns (uint256);
     function BREATHE_BLOCK_INTERVAL() external view returns (uint256);

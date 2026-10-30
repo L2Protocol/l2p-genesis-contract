@@ -44,7 +44,7 @@
   },
   {
     "type": "function",
-    "name": "EMISSION_HALVING_PERIOD_INIT",
+    "name": "EMISSION_APR_PHASE_ONE_INIT",
     "inputs": [],
     "outputs": [
       {
@@ -57,7 +57,33 @@
   },
   {
     "type": "function",
-    "name": "EMISSION_MAX_HALVINGS_INIT",
+    "name": "EMISSION_APR_PHASE_TWO_INIT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EMISSION_APR_SCALE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EMISSION_PHASE_ONE_DURATION",
     "inputs": [],
     "outputs": [
       {
@@ -83,7 +109,20 @@
   },
   {
     "type": "function",
-    "name": "EMISSION_RATE_PER_BLOCK_INIT",
+    "name": "EMISSION_STARTER_INIT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "EMISSION_TARGET_STAKE_INIT",
     "inputs": [],
     "outputs": [
       {
@@ -96,13 +135,13 @@
   },
   {
     "type": "function",
-    "name": "EMISSION_STARTER_INIT",
+    "name": "EMISSION_YEAR",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -475,7 +514,7 @@
   },
   {
     "type": "function",
-    "name": "emissionHalvingPeriod",
+    "name": "emissionAprPhaseOne",
     "inputs": [],
     "outputs": [
       {
@@ -488,7 +527,7 @@
   },
   {
     "type": "function",
-    "name": "emissionLastBlock",
+    "name": "emissionAprPhaseTwo",
     "inputs": [],
     "outputs": [
       {
@@ -501,7 +540,7 @@
   },
   {
     "type": "function",
-    "name": "emissionMaxHalvings",
+    "name": "emissionLastTime",
     "inputs": [],
     "outputs": [
       {
@@ -527,13 +566,24 @@
   },
   {
     "type": "function",
-    "name": "emissionRatePerBlock",
-    "inputs": [],
-    "outputs": [
+    "name": "emissionStakes",
+    "inputs": [
       {
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "stake",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "time",
+        "type": "uint128",
+        "internalType": "uint128"
       }
     ],
     "stateMutability": "view"
@@ -573,6 +623,19 @@
         "name": "",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "emissionTargetStake",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"

@@ -903,6 +903,24 @@ contract StakeHub is SystemV2, Initializable, Protectable {
     }
 
     /**
+     * @notice get the credit contract address and the jail status of the validator behind a consensus address
+     * @dev Reads the two fields from storage instead of copying the whole validator, because the validator set
+     * calls this for every validator at every breathe block.
+     *
+     * @param consensusAddress the consensus address of the validator
+     *
+     * @return creditContract the credit contract address of the validator, zero if the address is unknown
+     * @return jailed whether the validator is jailed
+     */
+    function getValidatorEmissionInfo(
+        address consensusAddress
+    ) external view returns (address creditContract, bool jailed) {
+        Validator storage valInfo = _validators[consensusToOperator[consensusAddress]];
+        creditContract = valInfo.creditContract;
+        jailed = valInfo.jailed;
+    }
+
+    /**
      * @notice get the vote address of a validator
      *
      * @param operatorAddress the operator address of the validator

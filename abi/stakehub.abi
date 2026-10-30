@@ -707,6 +707,30 @@
   },
   {
     "type": "function",
+    "name": "getValidatorEmissionInfo",
+    "inputs": [
+      {
+        "name": "consensusAddress",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "creditContract",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "jailed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getValidatorRewardRecord",
     "inputs": [
       {

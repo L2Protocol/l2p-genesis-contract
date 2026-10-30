@@ -9,6 +9,7 @@ import "./interface/0.6.x/ISlashIndicator.sol";
 import "./interface/0.6.x/IParamSubscriber.sol";
 import "./interface/0.6.x/IL2PValidatorSet.sol";
 import "./interface/0.6.x/IStakeHub.sol";
+import "./interface/0.6.x/IStakeCredit.sol";
 import "./lib/0.6.x/SafeMath.sol";
 import "./lib/0.6.x/RLPDecode.sol";
 
@@ -65,21 +66,32 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
     uint256 public turnLength; // Consecutive number of blocks a validator receives priority for block production
     uint256 public systemRewardAntiMEVRatio;
 
-    uint256 public constant EMISSION_POOL_TOTAL = 50_000_000_000 ether;
-    uint256 public constant EMISSION_RATE_PER_BLOCK_INIT = 317 ether;
-    uint256 public constant EMISSION_HALVING_PERIOD_INIT = 105_192_000;
-    uint256 public constant EMISSION_MAX_HALVINGS_INIT = 2;
+    uint256 public constant EMISSION_POOL_TOTAL = 20_000_000_000 ether;
+    uint256 public constant EMISSION_APR_SCALE = 10000;
+    uint256 public constant EMISSION_APR_PHASE_ONE_INIT = 750;
+    uint256 public constant EMISSION_APR_PHASE_TWO_INIT = 400;
+    uint256 public constant EMISSION_TARGET_STAKE_INIT = 30_000_000_000 ether;
+    uint256 public constant EMISSION_PHASE_ONE_DURATION = 5 * 365 days;
+    uint256 public constant EMISSION_YEAR = 365 days;
     address public constant EMISSION_STARTER_INIT = 0x1B272dC2635CFBE67116434CdBfD7525f8F5196F;
 
-    uint256 public emissionRatePerBlock;
-    uint256 public emissionHalvingPeriod;
-    uint256 public emissionMaxHalvings;
+    uint256 public emissionAprPhaseOne;
+    uint256 public emissionAprPhaseTwo;
+    uint256 public emissionTargetStake;
     uint256 public emissionPoolRemaining;
     uint256 public emissionStartBlock;
-    uint256 public emissionLastBlock;
+    uint256 public emissionLastTime;
     uint256 public totalEmitted;
     address public emissionStarter;
     uint256 public emissionStartTime;
+
+    // the stake each validator's credit contract had at the breathe block of `time`
+    struct EmissionStake {
+        uint128 stake;
+        uint128 time;
+    }
+
+    mapping(address => EmissionStake) public emissionStakes;
 
     struct Validator {
         address consensusAddress;
@@ -160,9 +172,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
         require(address(this).balance >= EMISSION_POOL_TOTAL, "emission pool genesis balance too low");
 
-        emissionRatePerBlock = EMISSION_RATE_PER_BLOCK_INIT;
-        emissionHalvingPeriod = EMISSION_HALVING_PERIOD_INIT;
-        emissionMaxHalvings = EMISSION_MAX_HALVINGS_INIT;
+        emissionAprPhaseOne = EMISSION_APR_PHASE_ONE_INIT;
+        emissionAprPhaseTwo = EMISSION_APR_PHASE_TWO_INIT;
+        emissionTargetStake = EMISSION_TARGET_STAKE_INIT;
         emissionPoolRemaining = EMISSION_POOL_TOTAL;
         emissionStarter = EMISSION_STARTER_INIT;
 
@@ -230,6 +242,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         if (validatorSetTemp.length != 0) {
             doUpdateState(validatorSetTemp, voteAddrsTemp);
         }
+
+        // step 4: give validators that just joined the set their first emission stake snapshot
+        _snapshotNewValidators();
 
         // step 3: clean slash contract
         ISlashIndicator(SLASH_CONTRACT_ADDR).clean();
@@ -705,21 +720,21 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
                 "the turnLength should be in [3,64] or equal to 1"
             );
             turnLength = newTurnLength;
-        } else if (Memory.compareStrings(key, "emissionRatePerBlock")) {
-            require(value.length == 32, "length of emissionRatePerBlock mismatch");
-            uint256 newRate = BytesToTypes.bytesToUint256(32, value);
-            require(newRate <= EMISSION_RATE_PER_BLOCK_INIT, "emissionRatePerBlock too high");
-            emissionRatePerBlock = newRate;
-        } else if (Memory.compareStrings(key, "emissionHalvingPeriod")) {
-            require(value.length == 32, "length of emissionHalvingPeriod mismatch");
-            uint256 newPeriod = BytesToTypes.bytesToUint256(32, value);
-            require(newPeriod >= 1_000_000 && newPeriod <= 1_000_000_000_000, "emissionHalvingPeriod out of range");
-            emissionHalvingPeriod = newPeriod;
-        } else if (Memory.compareStrings(key, "emissionMaxHalvings")) {
-            require(value.length == 32, "length of emissionMaxHalvings mismatch");
-            uint256 newMax = BytesToTypes.bytesToUint256(32, value);
-            require(newMax >= 1 && newMax <= 20, "emissionMaxHalvings out of range");
-            emissionMaxHalvings = newMax;
+        } else if (Memory.compareStrings(key, "emissionAprPhaseOne")) {
+            require(value.length == 32, "length of emissionAprPhaseOne mismatch");
+            uint256 newApr = BytesToTypes.bytesToUint256(32, value);
+            require(newApr >= 1 && newApr <= EMISSION_APR_PHASE_ONE_INIT, "emissionAprPhaseOne out of range");
+            emissionAprPhaseOne = newApr;
+        } else if (Memory.compareStrings(key, "emissionAprPhaseTwo")) {
+            require(value.length == 32, "length of emissionAprPhaseTwo mismatch");
+            uint256 newApr = BytesToTypes.bytesToUint256(32, value);
+            require(newApr >= 1 && newApr <= EMISSION_APR_PHASE_TWO_INIT, "emissionAprPhaseTwo out of range");
+            emissionAprPhaseTwo = newApr;
+        } else if (Memory.compareStrings(key, "emissionTargetStake")) {
+            require(value.length == 32, "length of emissionTargetStake mismatch");
+            uint256 newTarget = BytesToTypes.bytesToUint256(32, value);
+            require(newTarget >= 1 ether && newTarget <= EMISSION_TARGET_STAKE_INIT, "emissionTargetStake out of range");
+            emissionTargetStake = newTarget;
         } else if (Memory.compareStrings(key, "emissionStarter")) {
             require(value.length == 20, "length of emissionStarter mismatch");
             address newStarter = BytesToTypes.bytesToAddress(20, value);
@@ -739,83 +754,131 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         }
 
         // the schedule has no clock until the starter has scheduled it and the epoch it points at has begun;
-        // the first breathe block of that epoch becomes block zero of the schedule and pays nothing yet
-        if (emissionStartBlock == 0) {
+        // the first breathe block of that epoch starts it and pays nothing yet, it only takes the first stake
+        // snapshot. The two phases count from emissionStartTime, not from this block.
+        bool starting = emissionStartBlock == 0;
+        uint256 fromTime = emissionLastTime;
+        if (starting) {
             if (emissionStartTime == 0 || block.timestamp < emissionStartTime) {
                 return;
             }
             emissionStartBlock = block.number;
-            emissionLastBlock = block.number;
             emit emissionStarted(block.number);
+        } else if (block.timestamp <= fromTime) {
             return;
         }
 
-        uint256 fromBlock = emissionLastBlock;
-        if (block.number <= fromBlock || block.number <= emissionStartBlock) {
-            return;
+        // a validator is paid on the smaller of its stake at the previous breathe block and its stake now, so
+        // stake has to be in place for the whole period to earn for it; jailed stake earns nothing
+        uint256 n = currentValidatorSet.length;
+        address[] memory credits = new address[](n);
+        uint256[] memory stakesNow = new uint256[](n);
+        uint256[] memory paid = new uint256[](n);
+        uint256 totalPaid;
+        uint256 lastPaid;
+        for (uint256 i; i < n; ++i) {
+            (address credit, bool jailed) =
+                IStakeHub(STAKE_HUB_ADDR).getValidatorEmissionInfo(currentValidatorSet[i].consensusAddress);
+            if (credit == address(0)) {
+                continue;
+            }
+            credits[i] = credit;
+            if (!jailed) {
+                stakesNow[i] = IStakeCredit(credit).totalPooledL2P();
+            }
+            if (!starting && isWorkingValidator(i)) {
+                EmissionStake memory snapshot = emissionStakes[credit];
+                if (snapshot.time == fromTime) {
+                    paid[i] = snapshot.stake < stakesNow[i] ? snapshot.stake : stakesNow[i];
+                    if (paid[i] != 0) {
+                        totalPaid = totalPaid.add(paid[i]);
+                        lastPaid = i;
+                    }
+                }
+            }
         }
+
+        // nothing is owed for a period without stake, so it is not carried over to the next epoch
+        emissionLastTime = block.timestamp;
 
         uint256 epochEmission;
-        uint256 cursor = fromBlock;
-        while (cursor < block.number) {
-            uint256 window = (cursor - emissionStartBlock) / emissionHalvingPeriod;
-            if (window >= emissionMaxHalvings) {
-                break;
+        if (totalPaid != 0) {
+            uint256 paidStake = totalPaid < emissionTargetStake ? totalPaid : emissionTargetStake;
+            epochEmission = _emissionBetween(paidStake, fromTime, block.timestamp);
+
+            if (epochEmission > emissionPoolRemaining) {
+                epochEmission = emissionPoolRemaining;
             }
-            uint256 windowEnd = emissionStartBlock + (window + 1).mul(emissionHalvingPeriod);
-            uint256 segmentEnd = windowEnd < block.number ? windowEnd : block.number;
-            epochEmission = epochEmission.add((emissionRatePerBlock >> window).mul(segmentEnd - cursor));
-            cursor = segmentEnd;
-        }
 
-        if (epochEmission > emissionPoolRemaining) {
-            epochEmission = emissionPoolRemaining;
-        }
-
-        uint256 availablePool = address(this).balance > totalInComing ? address(this).balance - totalInComing : 0;
-        if (epochEmission > availablePool) {
-            epochEmission = availablePool;
-        }
-
-        if (epochEmission == 0) {
-            return;
-        }
-
-        uint256 totalVotingPower;
-        uint256 lastActive;
-        uint256 n = currentValidatorSet.length;
-        for (uint256 i; i < n; ++i) {
-            if (isWorkingValidator(i)) {
-                totalVotingPower = totalVotingPower.add(currentValidatorSet[i].votingPower);
-                lastActive = i;
+            uint256 availablePool = address(this).balance > totalInComing ? address(this).balance - totalInComing : 0;
+            if (epochEmission > availablePool) {
+                epochEmission = availablePool;
             }
         }
-
-        if (totalVotingPower == 0) {
-            return;
-        }
-
-        emissionLastBlock = block.number;
 
         uint256 distributed;
-
         for (uint256 i; i < n; ++i) {
-            if (isWorkingValidator(i)) {
-                uint256 share;
-                if (i == lastActive) {
+            if (credits[i] == address(0)) {
+                continue;
+            }
+            uint256 share;
+            if (epochEmission != 0 && paid[i] != 0) {
+                if (i == lastPaid) {
                     share = epochEmission.sub(distributed);
                 } else {
-                    share = epochEmission.mul(currentValidatorSet[i].votingPower).div(totalVotingPower);
+                    share = epochEmission.mul(paid[i]).div(totalPaid);
                     distributed = distributed.add(share);
                 }
                 currentValidatorSet[i].incoming = currentValidatorSet[i].incoming.add(share);
                 totalInComing = totalInComing.add(share);
             }
+            // the share lands in the validator's pool in this same breathe block, so it is stake from now on
+            emissionStakes[credits[i]] = EmissionStake(uint128(stakesNow[i].add(share)), uint128(block.timestamp));
         }
 
-        emissionPoolRemaining = emissionPoolRemaining.sub(epochEmission);
-        totalEmitted = totalEmitted.add(epochEmission);
-        emit emissionDistributed(epochEmission, emissionPoolRemaining);
+        if (epochEmission != 0) {
+            emissionPoolRemaining = emissionPoolRemaining.sub(epochEmission);
+            totalEmitted = totalEmitted.add(epochEmission);
+            emit emissionDistributed(epochEmission, emissionPoolRemaining);
+        }
+    }
+
+    // validators that joined the set in this breathe block have no snapshot yet; taking it now lets them earn from
+    // today instead of from tomorrow, while their stake still has to stay a whole period to be paid for it
+    function _snapshotNewValidators() private {
+        if (emissionStartBlock == 0 || emissionPoolRemaining == 0) {
+            return;
+        }
+        uint256 n = currentValidatorSet.length;
+        for (uint256 i; i < n; ++i) {
+            (address credit, bool jailed) =
+                IStakeHub(STAKE_HUB_ADDR).getValidatorEmissionInfo(currentValidatorSet[i].consensusAddress);
+            if (credit == address(0) || emissionStakes[credit].time == block.timestamp) {
+                continue;
+            }
+            uint256 stake = jailed ? 0 : IStakeCredit(credit).totalPooledL2P();
+            emissionStakes[credit] = EmissionStake(uint128(stake), uint128(block.timestamp));
+        }
+    }
+
+    // phase one runs for EMISSION_PHASE_ONE_DURATION from the scheduled start; phase two has no end
+    // and keeps paying until the pool is empty
+    function _emissionBetween(
+        uint256 stake,
+        uint256 fromTime,
+        uint256 toTime
+    ) private view returns (uint256) {
+        uint256 phaseOneEnd = emissionStartTime.add(EMISSION_PHASE_ONE_DURATION);
+        uint256 weighted;
+        if (fromTime < phaseOneEnd) {
+            uint256 end = toTime < phaseOneEnd ? toTime : phaseOneEnd;
+            weighted = emissionAprPhaseOne.mul(end - fromTime);
+            fromTime = end;
+        }
+        if (fromTime < toTime) {
+            weighted = weighted.add(emissionAprPhaseTwo.mul(toTime - fromTime));
+        }
+        return stake.mul(weighted).div(EMISSION_APR_SCALE.mul(EMISSION_YEAR));
     }
 
     function doUpdateState(

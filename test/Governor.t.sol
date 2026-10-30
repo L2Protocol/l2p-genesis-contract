@@ -61,8 +61,8 @@ contract GovernorTest is Deployer {
         (address validator,, address credit,) = _createValidator(stakeHub.minSelfDelegationL2P());
         _ensureProposeSupply();
         vm.startPrank(delegator);
-        vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P() - 1 ether;
+        vm.deal(delegator, 50_000_000 ether);
+        uint256 l2pAmount = 40_000_000 ether - stakeHub.minSelfDelegationL2P() - 1 ether;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
         uint256 shares = IStakeCredit(credit).balanceOf(delegator);
         assertEq(shares, l2pAmount);
@@ -122,13 +122,54 @@ contract GovernorTest is Deployer {
         assertEq(govToken.getVotes(delegator), govL2PBalance - l2pAmount);
     }
 
+    function testGenesisProposalThresholdIsThirtyMillion() public {
+        address fresh = address(0x60F00D);
+        vm.etch(fresh, vm.getDeployedCode("L2PGovernor.sol:L2PGovernor"));
+        vm.txGasPrice(0);
+        vm.prank(block.coinbase);
+        L2PGovernor(payable(fresh)).initialize();
+        assertEq(L2PGovernor(payable(fresh)).proposalThreshold(), 30_000_000 ether);
+    }
+
+    function testProposeNeedsThirtyMillionVotes() public {
+        address delegator = _getNextUserAddress();
+        (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
+        _ensureProposeSupply();
+
+        vm.startPrank(delegator);
+        vm.deal(delegator, 40_000_000 ether);
+        stakeHub.delegate{ value: PROPOSAL_THRESHOLD - stakeHub.minDelegationL2PChange() }(validator, false);
+        govToken.delegate(delegator);
+        vm.roll(block.number + 1);
+
+        address[] memory targets = new address[](1);
+        targets[0] = GOV_HUB_ADDR;
+        uint256[] memory values = new uint256[](1);
+        bytes[] memory calldatas = new bytes[](1);
+        vm.expectRevert("Governor: proposer votes below proposal threshold");
+        governor.propose(targets, values, calldatas, "below");
+
+        stakeHub.delegate{ value: stakeHub.minDelegationL2PChange() }(validator, false);
+        vm.roll(block.number + 1);
+        governor.propose(targets, values, calldatas, "at the threshold");
+        vm.stopPrank();
+    }
+
+    function testProposalThresholdCanBeRaisedToThreeHundredMillion() public {
+        _updateParamByGovHub("proposalThreshold", abi.encode(uint256(300_000_000 ether)), address(governor));
+        assertEq(governor.proposalThreshold(), 300_000_000 ether);
+
+        _updateParamByGovHub("proposalThreshold", abi.encode(uint256(300_000_000 ether + 1)), address(governor));
+        assertEq(governor.proposalThreshold(), 300_000_000 ether);
+    }
+
     function testProposalNotApproved() public {
         address delegator = _getNextUserAddress();
         (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
         _ensureProposeSupply();
         vm.startPrank(delegator);
-        vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P();
+        vm.deal(delegator, 50_000_000 ether);
+        uint256 l2pAmount = 40_000_000 ether - stakeHub.minSelfDelegationL2P();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 
         assertEq(govToken.getVotes(delegator), 0);
@@ -138,8 +179,8 @@ contract GovernorTest is Deployer {
 
         address delegator2 = _getNextUserAddress();
         vm.startPrank(delegator2);
-        vm.deal(delegator2, 20_000_000 ether);
-        l2pAmount = 10_000_000 ether;
+        vm.deal(delegator2, 50_000_000 ether);
+        l2pAmount = 40_000_000 ether;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 
         assertEq(govToken.getVotes(delegator2), 0);
@@ -185,8 +226,8 @@ contract GovernorTest is Deployer {
         (address validator,,,) = _createValidator(stakeHub.minSelfDelegationL2P());
         _ensureProposeSupply();
         vm.startPrank(delegator);
-        vm.deal(delegator, 20_000_000 ether);
-        uint256 l2pAmount = 10_000_000 ether - stakeHub.minSelfDelegationL2P();
+        vm.deal(delegator, 50_000_000 ether);
+        uint256 l2pAmount = 40_000_000 ether - stakeHub.minSelfDelegationL2P();
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 
         assertEq(govToken.getVotes(delegator), 0);
@@ -196,7 +237,7 @@ contract GovernorTest is Deployer {
 
         address delegator2 = _getNextUserAddress();
         vm.startPrank(delegator2);
-        vm.deal(delegator2, 20_000_000 ether);
+        vm.deal(delegator2, 50_000_000 ether);
         l2pAmount = l2pAmount / 10;
         stakeHub.delegate{ value: l2pAmount }(validator, false);
 

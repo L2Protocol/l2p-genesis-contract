@@ -37,7 +37,7 @@ contract L2PGovernor is
     uint256 private constant BLOCK_INTERVAL_MS = 1500;
     uint256 private constant INIT_VOTING_DELAY = 0 hours * 1000 / BLOCK_INTERVAL_MS;
     uint256 private constant INIT_VOTING_PERIOD = 7 days * 1000 / BLOCK_INTERVAL_MS;
-    uint256 private constant INIT_PROPOSAL_THRESHOLD = 700_000 ether; //  = 700_000 L2P
+    uint256 private constant INIT_PROPOSAL_THRESHOLD = 30_000_000 ether; //  = 30_000_000 L2P
     uint256 private constant INIT_QUORUM_NUMERATOR = 10; // for >= 10%
 
     // starting propose requires totalSupply of GovL2P >= 1750000000 * 1e18
@@ -189,7 +189,7 @@ contract L2PGovernor is
         } else if (key.compareStrings("proposalThreshold")) {
             if (value.length != 32) revert InvalidValue(key, value);
             uint256 newProposalThreshold = value.bytesToUint256(32);
-            if (newProposalThreshold == 0 || newProposalThreshold > 35_000_000 ether) {
+            if (newProposalThreshold == 0 || newProposalThreshold > 300_000_000 ether) {
                 revert InvalidValue(key, value);
             }
             _setProposalThreshold(newProposalThreshold);

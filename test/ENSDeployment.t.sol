@@ -15,6 +15,7 @@ contract ENSDeploymentTest is Test, DeployENS {
     uint256 internal constant PRICE_TOLERANCE = 1e9; // 1e-9 relative, see test_PriceIsPeggedToUsd
 
     address internal alice = address(0xA11CE);
+    address internal rateKey = address(0x0AC1E);
 
     function setUp() public {
         vm.warp(1788865500);
@@ -22,6 +23,7 @@ contract ENSDeploymentTest is Test, DeployENS {
         ens = _deployRegistry();
         deployer = address(this);
         finalOwner = address(this);
+        oracleUpdater = rateKey;
 
         _deployRoot();
         _deployBaseRegistrar();
@@ -147,10 +149,29 @@ contract ENSDeploymentTest is Test, DeployENS {
         assertEq(defaultReverseRegistrar.owner(), newOwner);
         assertEq(controller.owner(), newOwner);
         assertEq(usdOracle.owner(), newOwner);
+        assertEq(usdOracle.updater(), rateKey);
         assertEq(ens.owner(REVERSE_NODE), newOwner);
 
         assertTrue(root.controllers(newOwner));
         assertFalse(root.controllers(address(this)));
+    }
+
+    function test_VerifyCatchesAnIncompleteHandover() public {
+        finalOwner = address(0xB0B);
+        vm.expectRevert("Root not owned by the final owner");
+        this.verifyExternally();
+    }
+
+    function verifyExternally() external view {
+        _verify();
+    }
+
+    function test_DefaultOracleUpdaterIsTheMainnetKeyOnlyOnMainnet() public {
+        vm.chainId(12216);
+        assertEq(_defaultOracleUpdater(), 0x4c7E113666b776298246B7208a6564E251Bb370D);
+
+        vm.chainId(714);
+        assertEq(_defaultOracleUpdater(), deployer);
     }
 
     function test_PriceIsPeggedToUsd() public view {
@@ -182,28 +203,132 @@ contract ENSDeploymentTest is Test, DeployENS {
         assertApproxEqRel(controller.rentPrice("l2protocol", ONE_YEAR).base, before / 2, PRICE_TOLERANCE);
 
         // At $1.00 per L2P the USD prices are the L2P prices.
+        usdOracle.setBounds(1, 1e9);
         usdOracle.setLatestAnswer(1e8);
         assertApproxEqRel(controller.rentPrice("l2protocol", ONE_YEAR).base, 5 ether, PRICE_TOLERANCE);
         assertApproxEqRel(controller.rentPrice("abc", ONE_YEAR).base, 640 ether, PRICE_TOLERANCE);
     }
 
-    function test_OnlyTheOwnerCanSetTheUsdPrice() public {
-        vm.prank(alice);
-        vm.expectRevert("Ownable: caller is not the owner");
-        usdOracle.setLatestAnswer(1e8);
+    function test_OracleStartsWithBoundsAroundTheInitialRate() public view {
+        assertEq(usdOracle.latestAnswer(), 10_000);
+        assertEq(usdOracle.minAnswer(), 100);
+        assertEq(usdOracle.maxAnswer(), 1_000_000);
+    }
 
+    function test_OnlyTheOwnerAndTheUpdaterCanSetTheUsdPrice() public {
+        vm.prank(alice);
+        vm.expectRevert(L2PUsdOracle.NotUpdater.selector);
+        usdOracle.setLatestAnswer(20_000);
+
+        vm.prank(rateKey);
+        usdOracle.setLatestAnswer(20_000);
+        assertEq(usdOracle.latestAnswer(), 20_000);
+
+        usdOracle.setLatestAnswer(10_000);
         assertEq(usdOracle.latestAnswer(), 10_000);
     }
 
-    function test_UsdOracleRejectsNonPositivePrices() public {
-        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(0)));
-        usdOracle.setLatestAnswer(0);
+    function test_UpdaterIsHeldToDoublingOrHalvingPerDay() public {
+        vm.startPrank(rateKey);
+        vm.expectRevert(
+            abi.encodeWithSelector(L2PUsdOracle.AnswerChangeTooLarge.selector, int256(10_000), int256(20_001))
+        );
+        usdOracle.setLatestAnswer(20_001);
+        vm.expectRevert(
+            abi.encodeWithSelector(L2PUsdOracle.AnswerChangeTooLarge.selector, int256(10_000), int256(4_999))
+        );
+        usdOracle.setLatestAnswer(4_999);
 
-        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(-1)));
-        usdOracle.setLatestAnswer(-1);
+        // hourly updates move freely within the day's range, but stepping does not stretch it
+        usdOracle.setLatestAnswer(15_000);
+        vm.warp(block.timestamp + 1 hours);
+        usdOracle.setLatestAnswer(20_000);
+        vm.warp(block.timestamp + 1 hours);
+        vm.expectRevert(
+            abi.encodeWithSelector(L2PUsdOracle.AnswerChangeTooLarge.selector, int256(10_000), int256(30_000))
+        );
+        usdOracle.setLatestAnswer(30_000);
+        usdOracle.setLatestAnswer(5_000);
 
-        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(0)));
-        new L2PUsdOracle(0);
+        // a new day starts from the rate as it stands then
+        vm.warp(usdOracle.windowStart() + usdOracle.UPDATE_WINDOW());
+        usdOracle.setLatestAnswer(10_000);
+        assertEq(usdOracle.windowStartAnswer(), 5_000);
+        vm.stopPrank();
+    }
+
+    function test_ALeakedUpdaterNeedsAboutAWeekToReachTheTopBound() public {
+        vm.startPrank(rateKey);
+        uint256 start = block.timestamp;
+        int256 top = usdOracle.maxAnswer();
+        while (usdOracle.latestAnswer() < top) {
+            int256 next = usdOracle.latestAnswer() * 2;
+            usdOracle.setLatestAnswer(next > top ? top : next);
+            vm.warp(usdOracle.windowStart() + usdOracle.UPDATE_WINDOW());
+        }
+        vm.stopPrank();
+
+        // seven doublings from 10_000 to the 1_000_000 bound, one per day
+        assertEq(block.timestamp - start, 7 days);
+    }
+
+    function test_OwnerSettingARateStartsANewWindow() public {
+        vm.warp(block.timestamp + 3 hours);
+        usdOracle.setLatestAnswer(40_000);
+        assertEq(usdOracle.windowStart(), block.timestamp);
+        assertEq(usdOracle.windowStartAnswer(), 40_000);
+
+        vm.prank(rateKey);
+        usdOracle.setLatestAnswer(80_000);
+        assertEq(usdOracle.latestAnswer(), 80_000);
+    }
+
+    function test_NobodyCanLeaveTheBounds() public {
+        // the owner is not held to the step or the interval, but is held to the bounds
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(1_000_001)));
+        usdOracle.setLatestAnswer(1_000_001);
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(99)));
+        usdOracle.setLatestAnswer(99);
+
+        // a leaked updater key can push the rate up only step by step, and never past the top
+        usdOracle.setLatestAnswer(800_000);
+        vm.prank(rateKey);
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(1_600_000)));
+        usdOracle.setLatestAnswer(1_600_000);
+    }
+
+    function test_OwnerReplacesALeakedUpdater() public {
+        address newKey = address(0x0AC2E);
+        usdOracle.setUpdater(newKey);
+
+        vm.prank(rateKey);
+        vm.expectRevert(L2PUsdOracle.NotUpdater.selector);
+        usdOracle.setLatestAnswer(12_000);
+
+        // the updater cannot take the oracle over
+        vm.prank(newKey);
+        vm.expectRevert("Ownable: caller is not the owner");
+        usdOracle.transferOwnership(newKey);
+        vm.prank(newKey);
+        vm.expectRevert("Ownable: caller is not the owner");
+        usdOracle.setUpdater(newKey);
+        vm.prank(newKey);
+        vm.expectRevert("Ownable: caller is not the owner");
+        usdOracle.setBounds(1, type(int256).max);
+    }
+
+    function test_BoundsMustBePositiveOrderedAndHoldTheRate() public {
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidBounds.selector, int256(0), int256(100)));
+        usdOracle.setBounds(0, 100);
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidBounds.selector, int256(200), int256(100)));
+        usdOracle.setBounds(200, 100);
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(10_000)));
+        usdOracle.setBounds(20_000, 30_000);
+
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidBounds.selector, int256(0), int256(1)));
+        new L2PUsdOracle(1, 0, 1);
+        vm.expectRevert(abi.encodeWithSelector(L2PUsdOracle.InvalidAnswer.selector, int256(5)));
+        new L2PUsdOracle(5, 10, 20);
     }
 
     function test_RegistrationRevenueGoesToTheControllerOwner() public {

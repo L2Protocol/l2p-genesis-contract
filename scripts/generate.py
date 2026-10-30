@@ -18,10 +18,12 @@ chain_id: int
 hex_chain_id: str
 ens_registry_owner: str
 presale_owner: str
+team_vesting_beneficiary: str
 
 DEFAULT_ENS_REGISTRY_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
 DEFAULT_PRESALE_OWNER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
 DEFAULT_EMISSION_STARTER = "0x1B272dC2635CFBE67116434CdBfD7525f8F5196F"
+DEFAULT_TEAM_VESTING_BENEFICIARY = "0x5Cf2362A30CDc47006Af86A0555e968687C7522d"
 
 main = typer.Typer()
 
@@ -218,16 +220,17 @@ def generate_gov_hub():
 
 def generate_genesis(output="./genesis.json"):
     subprocess.run(["forge", "build"], cwd=work_dir, check=True)
-    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--ensRegistryOwner", f"{ens_registry_owner}", "--presaleOwner", f"{presale_owner}", "--output", f"{output}"], cwd=work_dir, check=True)
+    subprocess.run(["node", "scripts/generate-genesis.js", "--chainId", f"{chain_id}", "--ensRegistryOwner", f"{ens_registry_owner}", "--presaleOwner", f"{presale_owner}", "--teamVestingBeneficiary", f"{team_vesting_beneficiary}", "--output", f"{output}"], cwd=work_dir, check=True)
 
 
 @main.command(help="Generate contracts for L2P mainnet")
 def mainnet():
-    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner, team_vesting_beneficiary
     network = "mainnet"
     chain_id = 12216
     ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
     presale_owner = DEFAULT_PRESALE_OWNER
+    team_vesting_beneficiary = DEFAULT_TEAM_VESTING_BENEFICIARY
     hex_chain_id = convert_chain_id(chain_id)
 
     # mainnet init data
@@ -245,7 +248,7 @@ def mainnet():
     felony_threshold = "150"
     init_voting_delay = "0 hours * 1000 / BLOCK_INTERVAL_MS"
     init_voting_period = "7 days * 1000 / BLOCK_INTERVAL_MS"
-    init_proposal_threshold = "700_000 ether"
+    init_proposal_threshold = "30_000_000 ether"
     init_quorum_numerator = "10"
     propose_start_threshold = "1_750_000_000 ether"
     init_min_period_after_quorum = "uint64(1 days * 1000 / BLOCK_INTERVAL_MS)"
@@ -276,10 +279,11 @@ def mainnet():
 
 @main.command(help="Generate contracts for L2P testnet")
 def testnet():
-    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner, team_vesting_beneficiary
     network = "testnet"
     ens_registry_owner = DEFAULT_ENS_REGISTRY_OWNER
     presale_owner = DEFAULT_PRESALE_OWNER
+    team_vesting_beneficiary = DEFAULT_TEAM_VESTING_BENEFICIARY
     chain_id = 97
     hex_chain_id = convert_chain_id(chain_id)
 
@@ -361,13 +365,16 @@ def dev(
         str, typer.Option(help="owner of the ENS root node in genesis")] = DEFAULT_ENS_REGISTRY_OWNER,
     presale_duration: Annotated[str, typer.Option(help="PRESALE_DURATION of L2PPresale")] = "365 days",
     dev_presale_owner: Annotated[str, typer.Option(help="owner of L2PPresale in genesis")] = DEFAULT_PRESALE_OWNER,
+    dev_team_vesting_beneficiary: Annotated[
+        str, typer.Option(help="beneficiary of the team L2PVesting in genesis")] = DEFAULT_TEAM_VESTING_BENEFICIARY,
     dev_emission_starter: Annotated[
         str, typer.Option(help="EMISSION_STARTER_INIT of L2PValidatorSet")] = DEFAULT_EMISSION_STARTER
 ):
-    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner
+    global network, chain_id, hex_chain_id, ens_registry_owner, presale_owner, team_vesting_beneficiary
     network = "dev"
     ens_registry_owner = dev_ens_registry_owner
     presale_owner = dev_presale_owner
+    team_vesting_beneficiary = dev_team_vesting_beneficiary
     chain_id = dev_chain_id
     hex_chain_id = convert_chain_id(chain_id)
 

@@ -133,6 +133,10 @@ interface StakeHub {
     function getValidatorCommission(address operatorAddress) external view returns (Commission memory);
     function getValidatorConsensusAddress(address operatorAddress) external view returns (address consensusAddress);
     function getValidatorCreditContract(address operatorAddress) external view returns (address creditContract);
+    function getValidatorEmissionInfo(address consensusAddress)
+        external
+        view
+        returns (address creditContract, bool jailed);
     function getValidatorDescription(address operatorAddress) external view returns (Description memory);
     function getValidatorElectionInfo(
         uint256 offset,

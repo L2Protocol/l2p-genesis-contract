@@ -29,9 +29,16 @@ contract DeployENS is Script {
     bytes32 internal constant REVERSE_NODE = 0xa097f6721ce401e757d1223a763fef49b8b5f90bb18567ddb86fd205dff71d34;
     bytes32 internal constant ADDR_REVERSE_NODE = 0x91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2;
 
+    /// @dev The key that keeps the L2P/USD rate current on mainnet. It sets the rate every hour, so it
+    ///      lives on a server. It is only the oracle's updater, held to the oracle's limits, while
+    ///      {finalOwner} owns the oracle along with everything else and can replace it.
+    address internal constant MAINNET_ORACLE_UPDATER = 0x4c7E113666b776298246B7208a6564E251Bb370D;
+    uint256 internal constant MAINNET_CHAIN_ID = 12216;
+
     ENS internal ens;
     address internal deployer;
     address internal finalOwner;
+    address internal oracleUpdater;
 
     Root public root;
     BaseRegistrarImplementation public baseRegistrar;
@@ -50,6 +57,7 @@ contract DeployENS is Script {
         uint256 pk = _deployerKey();
         deployer = pk == 0 ? msg.sender : vm.addr(pk);
         finalOwner = vm.envOr("ENS_OWNER", deployer);
+        oracleUpdater = vm.envOr("ENS_ORACLE_UPDATER", _defaultOracleUpdater());
 
         address rootOwner = ens.owner(ROOT_NODE);
         if (rootOwner != deployer) {
@@ -121,7 +129,11 @@ contract DeployENS is Script {
     ///      that the L2P price of a name does not move with the L2P market price. The price oracle
     ///      wants attoUSD per second, so yearly USD amounts are divided down here.
     function _deployPriceOracle() internal {
-        usdOracle = new L2PUsdOracle(int256(vm.envOr("L2P_USD_PRICE_E8", uint256(10_000))));
+        uint256 initialRate = vm.envOr("L2P_USD_PRICE_E8", uint256(10_000));
+        uint256 minRate = vm.envOr("L2P_USD_MIN_E8", initialRate / 100 == 0 ? 1 : initialRate / 100);
+        uint256 maxRate = vm.envOr("L2P_USD_MAX_E8", initialRate * 100);
+        usdOracle = new L2PUsdOracle(int256(initialRate), int256(minRate), int256(maxRate));
+        usdOracle.setUpdater(oracleUpdater);
 
         uint256[] memory rentPrices = new uint256[](5);
         rentPrices[0] = _usdPerYearToAttoUsdPerSecond(vm.envOr("RENT_USD_1_LETTER", uint256(0)));
@@ -190,6 +202,12 @@ contract DeployENS is Script {
         ens.setOwner(REVERSE_NODE, finalOwner);
     }
 
+    /// @dev Only mainnet has a standing updater key; elsewhere the deployer keeps the rate itself
+    ///      unless ENS_ORACLE_UPDATER names someone else.
+    function _defaultOracleUpdater() internal view returns (address) {
+        return block.chainid == MAINNET_CHAIN_ID ? MAINNET_ORACLE_UPDATER : deployer;
+    }
+
     function _verify() internal view {
         require(ens.owner(ROOT_NODE) == address(root), "root node not owned by Root");
         require(ens.owner(L2P_NODE) == address(baseRegistrar), "l2p node not owned by BaseRegistrar");
@@ -198,6 +216,15 @@ contract DeployENS is Script {
         require(baseRegistrar.controllers(address(controller)), "controller not authorised on BaseRegistrar");
         require(controller.valid("l2protocol"), "controller rejects a valid label");
         require(controller.rentPrice("l2protocol", 365 days).base > 0, "controller prices a name at zero");
+        require(root.owner() == finalOwner, "Root not owned by the final owner");
+        require(root.controllers(finalOwner), "final owner is not a Root controller");
+        require(baseRegistrar.owner() == finalOwner, "BaseRegistrar not owned by the final owner");
+        require(reverseRegistrar.owner() == finalOwner, "ReverseRegistrar not owned by the final owner");
+        require(defaultReverseRegistrar.owner() == finalOwner, "DefaultReverseRegistrar not owned by the final owner");
+        require(controller.owner() == finalOwner, "controller not owned by the final owner");
+        require(usdOracle.owner() == finalOwner, "L2PUsdOracle not owned by the final owner");
+        require(ens.owner(REVERSE_NODE) == finalOwner, "reverse node not owned by the final owner");
+        require(usdOracle.updater() == oracleUpdater, "L2PUsdOracle updater not set");
     }
 
     function _report() internal view {
@@ -214,5 +241,6 @@ contract DeployENS is Script {
         console.log("BatchGatewayProvider   ", address(batchGatewayProvider));
         console.log("UniversalResolver      ", address(universalResolver));
         console.log("owner                  ", finalOwner);
+        console.log("oracle updater         ", oracleUpdater);
     }
 }

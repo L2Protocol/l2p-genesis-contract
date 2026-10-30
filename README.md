@@ -178,14 +178,42 @@ Tests: `forge test --match-path test/L2PPresale.t.sol`. The ABI is in `abi/l2ppr
 
 ## Starting the emission schedule
 
-`L2PValidatorSet` pays the validator emission out of a 50,000,000,000 L2P pool that sits in the
-contract from genesis. The schedule does not run by itself: it has no clock until the emission
-starter calls `startEmission()`. That call does not start anything in the same block. It records
-the next epoch boundary (`emissionStartTime`, the next multiple of `BREATHE_BLOCK_INTERVAL` from
-StakeHub, so 00:00 UTC with the mainnet setting of one day) and the first breathe block at or after
-that moment becomes block zero of the schedule (`emissionStartBlock`). That breathe block pays
-nothing itself; the epoch that follows it is the first one paid out, and the halving windows count
-from `emissionStartBlock`. `startEmission()` works once.
+`L2PValidatorSet` pays the validator emission out of a 20,000,000,000 L2P pool that sits in the
+contract from genesis. It does not pay a fixed amount per block: once a day, at the breathe block, it
+pays a yearly yield on the stake of the working validators, for the time since the previous payout.
+
+```text
+emission = yield × min(total stake, emissionTargetStake) × seconds elapsed / 365 days
+```
+
+The yield is `emissionAprPhaseOne` (750, so 7.5%) for the first `EMISSION_PHASE_ONE_DURATION` (five
+years of 365 days) and `emissionAprPhaseTwo` (400, so 4%) after that, with no end until the pool is
+empty. Both are over a base of 10,000 and gross, before the validator's commission. Above
+`emissionTargetStake` (30,000,000,000 L2P) the total stays the same and the yield per staked coin
+falls.
+
+The stake is read on-chain: for each validator in the set, StakeHub's `getValidatorEmissionInfo` gives
+its StakeCredit contract and whether StakeHub has jailed it, and `totalPooledL2P()` on that contract
+gives its stake. A validator is paid on the smaller of its stake at the previous breathe block and its
+stake now, so stake has to be in place for the whole period to earn for it: what is delegated a few
+seconds before the payout, or moved in with a redelegate and out again, earns nothing for that period.
+The snapshot per credit contract is in `emissionStakes(credit)`, and the share paid out in a breathe
+block counts as stake from that moment, so the yield compounds. Validators that join the set get
+their first snapshot in the breathe block that elects them and earn from then on. The payout is
+shared in proportion to the stake paid on, so jailed or maintaining validators and validators StakeHub
+does not know get nothing and raise nothing, and a day without any stake is not paid out later.
+
+At full stake that is at most 2.25 billion L2P a year for five years and 1.2 billion a year after
+that: 17.25 billion in ten years, and the pool runs dry a little over twelve years after the start.
+The pool is sized to that ceiling, which is why it is 20 billion and not more.
+
+The schedule does not run by itself: it has no clock until the emission starter calls
+`startEmission()`. That call does not start anything in the same block. It records the next epoch
+boundary (`emissionStartTime`, the next multiple of `BREATHE_BLOCK_INTERVAL` from StakeHub, so 00:00
+UTC with the mainnet setting of one day), and the first breathe block at or after that moment starts
+the schedule (`emissionStartBlock`). That breathe block pays nothing itself; the epoch that follows it
+is the first one paid out. The two phases count from `emissionStartTime`, in seconds, so they do not
+move if the block interval ever changes. `startEmission()` works once.
 
 Only `emissionStarter` may call it. It is `EMISSION_STARTER_INIT` at genesis, set by the generator
 to `DEFAULT_EMISSION_STARTER` in `scripts/generate.py` for mainnet and testnet and to
@@ -193,11 +221,22 @@ to `DEFAULT_EMISSION_STARTER` in `scripts/generate.py` for mainnet and testnet a
 the `emissionStarter` parameter, the usual way (GovHub `updateParam`, a 20-byte address), which is
 the recovery path if the key is ever lost, since genesis cannot be redone.
 
+Governance can change the two yields and the target stake through the same route, anywhere up to
+their genesis values and never past them:
+
+| Parameter             | Genesis                  | Accepted range              |
+|-----------------------|--------------------------|-----------------------------|
+| `emissionAprPhaseOne` | `750` (7.5%)             | 1 to 750                    |
+| `emissionAprPhaseTwo` | `400` (4%)               | 1 to 400                    |
+| `emissionTargetStake` | 30,000,000,000 L2P       | 1 L2P to 30,000,000,000 L2P |
+
 | Call                   | Returns                                                                  |
 |------------------------|--------------------------------------------------------------------------|
 | `emissionStarter()`    | the address that may call `startEmission()`                              |
 | `emissionStartTime()`  | the epoch boundary the schedule starts at, `0` until `startEmission()`   |
-| `emissionStartBlock()` | block zero of the schedule, `0` until the breathe block of that epoch    |
+| `emissionStartBlock()` | the breathe block that started the schedule, `0` until then              |
+| `emissionLastTime()`   | the end of the last period settled, paid out or not: it also moves on a day without stake |
+| `emissionPoolRemaining()` | what is left in the pool                                              |
 | `totalEmitted()`       | what has been paid out so far                                            |
 
 ```shell script
@@ -210,6 +249,41 @@ cast send 0x0000000000000000000000000000000000001000 "startEmission()" --private
 
 Tests: `forge test --fork-url $RPC_L2P --match-path test/EmissionSchedule.t.sol`.
 
+## The team vesting contract
+
+The team allocation, 15,000,000,000 L2P, is held by `contracts/L2PVesting.sol` at
+`0x0000000000000000000000000000000000003002`, not by the team. Nothing is released in the first year.
+At the first anniversary of the start a quarter becomes available, and the rest vests linearly, per
+second, until the fourth anniversary. `release()` can be called by anyone and always pays the
+beneficiary; while nothing is releasable it does nothing. The beneficiary and the schedule cannot be changed, and nothing can be revoked. The
+contract cannot stake, so the coins in it carry no voting power until they are released.
+
+No constructor runs in genesis, so `scripts/generate-genesis.js` fills the template with the balance
+and the schedule and writes them straight into storage, the same way the presale owner is written:
+
+| Slot | Field           | Value in genesis                                                         |
+|------|-----------------|--------------------------------------------------------------------------|
+| 0    | `beneficiary`   | `DEFAULT_TEAM_VESTING_BENEFICIARY` in `scripts/generate.py`, `0x5Cf2…522d`; `--dev-team-vesting-beneficiary` for dev |
+| 1    | `start`         | the `timestamp` of the genesis block, read from the template by `scripts/generate-genesis.js` |
+| 2    | `cliffDuration` | `TEAM_VESTING_CLIFF` in `scripts/generate-genesis.js`, 365 days          |
+| 3    | `duration`      | `TEAM_VESTING_DURATION` in `scripts/generate-genesis.js`, 4 × 365 days   |
+
+The balance is `TEAM_VESTING_AMOUNT` in the same file. The generator also adds up every balance it
+writes and refuses to write a genesis that does not come to exactly `TOTAL_SUPPLY` (105 billion L2P).
+
+Advisors are paid through the same contract, deployed per advisor with the constructor
+(`beneficiary`, `start`, `cliffDuration`, `duration`) and funded from the advisors allocation with a
+plain transfer. Coins added later vest on the same schedule as if they had been there from the start.
+
+```shell script
+# what can be released right now, and release it to the team
+cast call 0x0000000000000000000000000000000000003002 "releasable()(uint256)" --rpc-url $RPC_L2P
+cast send 0x0000000000000000000000000000000000003002 "release()" --private-key $ANY_KEY --rpc-url $RPC_L2P
+```
+
+Tests: `forge test --match-path test/L2PVesting.t.sol`, and `test/GenesisPredeploys.t.sol` for the
+copy in genesis. The ABI is in `abi/l2pvesting.abi`.
+
 ## Other predeploys
 
 Besides the system contracts, genesis places a few general-purpose contracts, so that nothing has to
@@ -218,6 +292,7 @@ be bootstrapped with keyless or per-chain-signed transactions after launch.
 | Contract                         | Address                                      | Source                         |
 |----------------------------------|----------------------------------------------|--------------------------------|
 | WL2P (wrapped L2P)               | `0x0000000000000000000000000000000000003001` | `contracts/WL2P.sol`, compiled |
+| Team vesting                     | `0x0000000000000000000000000000000000003002` | `contracts/L2PVesting.sol`, compiled, see above |
 | Multicall3                       | `0xcA11bde05977b3631167028862bE2a173976CA11` | runtime code in the template   |
 | CreateX                          | `0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed` | runtime code in the template   |
 | Deterministic deployment proxy   | `0x4e59b44847b379578588920cA78FbF26c0B4956C` | runtime code in the template   |
@@ -248,7 +323,9 @@ be bootstrapped with keyless or per-chain-signed transactions after launch.
 `test/GenesisPredeploys.t.sol` loads these accounts from `genesis.json`, `genesis-testnet.json` and
 `genesis-dev.json` exactly as written there, compares the code hashes, and exercises them: WL2P
 deposit, transfer and withdraw, a CREATE2 deployment through each factory, and registering an
-interface implementer and manager in the ERC-1820 registry. Regenerate the genesis files before
+interface implementer and manager in the ERC-1820 registry. It also checks that the balances in each
+file add up to exactly 105,000,000,000 L2P, with 20 billion in the emission pool, and runs the team
+vesting contract from its genesis storage through the cliff to the end. Regenerate the genesis files before
 running it, with `poetry run python -m scripts.generate recover` after each network.
 
 ## How to deploy ENS and the .l2p TLD
@@ -590,7 +667,10 @@ All optional; without them the script uses the defaults. Put them in `.env` befo
 | Variable | Default | Meaning |
 |---|---|---|
 | `ENS_REGISTRY` | `0x0000…2e1e` | The registry from genesis |
-| `ENS_OWNER` | the deployer | Receives ownership of every contract at the end |
+| `ENS_OWNER` | the deployer | Receives ownership of every contract at the end, the `L2PUsdOracle` included |
+| `ENS_ORACLE_UPDATER` | `0x4c7E…370D` on mainnet, the deployer elsewhere | The key that keeps the L2P/USD rate current, within the oracle's limits |
+| `L2P_USD_MIN_E8` | `L2P_USD_PRICE_E8 / 100` | Lowest rate the oracle accepts until its owner moves the bounds |
+| `L2P_USD_MAX_E8` | `L2P_USD_PRICE_E8 * 100` | Highest rate the oracle accepts until its owner moves the bounds |
 | `L2P_USD_PRICE_E8` | `10000` | USD price of one L2P, times 1e8 (`10000` is $0.0001) |
 | `RENT_USD_3_LETTER` | `640` | Yearly price for 3-character names, in whole USD |
 | `RENT_USD_4_LETTER` | `160` | Yearly price for 4-character names, in whole USD |
@@ -608,17 +688,38 @@ ENS's own defaults for `.eth`, and the two- and one-character prices are left at
 controller does not accept labels under three characters anyway.
 
 The rate is not read from an external feed, which this chain does not have and which could be
-manipulated if it did. It is a value that the owner of the oracle sets, with 8 decimals the way
-Chainlink feeds report it: `10000` is $0.0001 per L2P, `100000000` is $1.00. Update it as the
-market price moves. The owner is the deployer at first (`ENS_OWNER` if set) and governance once the
-other ENS contracts are handed over too; `DeployENS` transfers it along with the rest.
+manipulated if it did. It is a value set on-chain, with 8 decimals the way Chainlink feeds report
+it: `10000` is $0.0001 per L2P, `100000000` is $1.00. It is updated as the market price moves; the
+plan is every hour.
+
+Two keys may set it. The owner is `ENS_OWNER`, the offline key that owns the other ENS contracts too.
+It can set any rate within the bounds, move the bounds with `setBounds`, and appoint or remove the
+updater with `setUpdater`. The updater is the key that keeps the rate current: `ENS_ORACLE_UPDATER`,
+which defaults to `0x4c7E113666b776298246B7208a6564E251Bb370D` on mainnet and to the deployer on any
+other chain. It signs every hour, so it sits on a server, and it is held to two limits: the rate has
+to stay within `minAnswer` and `maxAnswer`, and within each `UPDATE_WINDOW` (one day) it may end up at
+most at double or half of the rate the window began with (`windowStartAnswer`), however many updates
+it sends. A leaked updater key therefore needs about a week to move the rate a hundredfold and can
+never pass the bounds, so it cannot make names free, and the owner removes it with `setUpdater` long
+before then. It cannot touch the bounds, the ownership or any other ENS contract. When the market
+moves more than that in a day, the owner sets the rate itself, which also starts a new window from
+that rate.
+The bounds start at a hundredth and a hundred times the initial rate (`L2P_USD_MIN_E8`,
+`L2P_USD_MAX_E8`); the owner moves them when the market leaves that range. Neither key is meant to be
+governance: the governor can only call GovHub, and the oracle has no `updateParam`, so a rate handed
+to the timelock could never move again. The updater only needs gas: hourly updates cost well under
+one L2P a year.
+
+`_verify` at the end of `DeployENS` checks every handover: that `ENS_OWNER` owns the Root, both
+registrars, the default reverse registrar, the controller, the oracle and the reverse node, is a Root
+controller, and that the oracle's updater is `ENS_ORACLE_UPDATER`.
 
 ```shell script
 export ORACLE=0x...your-L2PUsdOracle...
 
 # L2P now trades at $0.00025
 cast send $ORACLE "setLatestAnswer(int256)" 25000 \
-  --private-key $DEPLOYER_PRIVATE_KEY --rpc-url $RPC_L2P \
+  --private-key $ORACLE_UPDATER_KEY --rpc-url $RPC_L2P \
   --priority-gas-price 1gwei --with-gas-price 1gwei
 ```
 
@@ -647,8 +748,10 @@ is how upstream ENS works. Changing the USD prices therefore means deploying a n
 
 Registration and renewal fees stay in the `L2PRegistrarController`, and its `withdraw()` sends the
 whole balance to the controller's owner. Anyone can call it. Fees therefore go to the treasury, not
-to a burn: the owner is the deployer now and governance later, so the name service is revenue for
-whoever governs the chain. This is upstream's behaviour and involves no changes to the controller.
+to a burn: the owner is `ENS_OWNER`, so the name service is revenue for the treasury that key
+belongs to. This is upstream's behaviour and involves no changes to the controller. Do not hand the
+controller, or any other ENS contract, to the timelock: the governor can only call GovHub, so the fees
+and every ENS admin right would be stranded there for good.
 
 ```shell script
 cast send $CTRL "withdraw()" --private-key $DEPLOYER_PRIVATE_KEY --rpc-url $RPC_L2P \

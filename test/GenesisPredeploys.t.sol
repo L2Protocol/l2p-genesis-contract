@@ -3,6 +3,8 @@ pragma solidity ^0.8.10;
 
 import "forge-std/Test.sol";
 
+import { L2PVesting } from "../contracts/L2PVesting.sol";
+
 interface IWL2P {
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);
@@ -89,6 +91,9 @@ contract Greeter {
 // storage, no constructor) and checks that they behave like their counterparts on other chains.
 contract GenesisPredeploysTest is Test {
     address internal constant WL2P = 0x0000000000000000000000000000000000003001;
+    address internal constant TEAM_VESTING = 0x0000000000000000000000000000000000003002;
+    address internal constant TEAM = 0x5Cf2362A30CDc47006Af86A0555e968687C7522d;
+    address internal constant EMISSION_POOL = 0x0000000000000000000000000000000000001000;
     address internal constant CREATEX = 0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed;
     address internal constant DETERMINISTIC_DEPLOYMENT_PROXY = 0x4e59b44847b379578588920cA78FbF26c0B4956C;
     address internal constant SAFE_SINGLETON_FACTORY = 0x914d7Fec6aaC8cd542e72Bca78B30650d45643d7;
@@ -106,20 +111,20 @@ contract GenesisPredeploysTest is Test {
     address internal alice = address(0xA11CE);
 
     function test_mainnetGenesis() public {
-        _checkGenesis("genesis.json");
+        _checkGenesis("genesis.json", TEAM);
     }
 
     function test_testnetGenesis() public {
-        _checkGenesis("genesis-testnet.json");
+        _checkGenesis("genesis-testnet.json", TEAM);
     }
 
     function test_devGenesis() public {
-        _checkGenesis("genesis-dev.json");
+        // dev may name its own beneficiary with --dev-team-vesting-beneficiary
+        _checkGenesis("genesis-dev.json", address(0));
     }
 
-    function _checkGenesis(
-        string memory file
-    ) internal {
+    // `team` is the expected vesting beneficiary, or zero to accept whatever the file names
+    function _checkGenesis(string memory file, address team) internal {
         string memory json = vm.readFile(file);
         _load(json, WL2P);
         _load(json, CREATEX);
@@ -145,6 +150,64 @@ contract GenesisPredeploysTest is Test {
         _checkCreate2Factory(SAFE_SINGLETON_FACTORY);
         _checkERC1820Registry();
         _checkImmutableCreate2Factory();
+        _checkSupply(json);
+        _checkTeamVesting(json, team);
+    }
+
+    function _balance(
+        string memory json,
+        address account
+    ) internal view returns (uint256) {
+        return vm.parseJsonUint(json, string.concat(".alloc['", vm.toString(account), "'].balance"));
+    }
+
+    function _checkSupply(
+        string memory json
+    ) internal view {
+        string[] memory accounts = vm.parseJsonKeys(json, ".alloc");
+        uint256 total;
+        for (uint256 i = 0; i < accounts.length; i++) {
+            total += vm.parseJsonUint(json, string.concat(".alloc['", accounts[i], "'].balance"));
+        }
+        assertEq(total, 105_000_000_000 ether, "total supply");
+        assertEq(_balance(json, EMISSION_POOL), 20_000_000_000 ether, "emission pool");
+        assertEq(_balance(json, TEAM_VESTING), 15_000_000_000 ether, "team vesting");
+        assertFalse(
+            vm.keyExistsJson(json, string.concat(".alloc['", vm.toString(TEAM), "']")),
+            "the team address itself holds nothing at genesis"
+        );
+    }
+
+    function _checkTeamVesting(string memory json, address team) internal {
+        _load(json, TEAM_VESTING);
+        vm.deal(TEAM_VESTING, _balance(json, TEAM_VESTING));
+        assertEq(TEAM_VESTING.code, vm.getDeployedCode("L2PVesting.sol:L2PVesting"), "L2PVesting code differs");
+
+        L2PVesting vesting = L2PVesting(payable(TEAM_VESTING));
+        uint256 genesisTime = vm.parseJsonUint(json, ".timestamp");
+        address beneficiary = vesting.beneficiary();
+        if (team != address(0)) assertEq(beneficiary, team);
+        assertTrue(beneficiary != address(0));
+        assertEq(vesting.start(), genesisTime);
+        assertEq(vesting.cliffDuration(), 365 days);
+        assertEq(vesting.duration(), 4 * 365 days);
+        assertEq(vesting.released(), 0);
+
+        // the team address may already hold coins on the chain the test forks from
+        uint256 teamBefore = beneficiary.balance;
+
+        vm.warp(genesisTime + 365 days - 1);
+        assertEq(vesting.releasable(), 0);
+
+        vm.warp(genesisTime + 365 days);
+        vm.prank(alice);
+        vesting.release();
+        assertEq(beneficiary.balance - teamBefore, 3_750_000_000 ether);
+
+        vm.warp(genesisTime + 4 * 365 days);
+        vesting.release();
+        assertEq(beneficiary.balance - teamBefore, 15_000_000_000 ether);
+        assertEq(TEAM_VESTING.balance, 0);
     }
 
     function _load(

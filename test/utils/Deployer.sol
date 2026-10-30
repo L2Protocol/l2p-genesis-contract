@@ -42,6 +42,7 @@ contract Deployer is Test {
 
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
     uint256 internal constant PROPOSE_START_SUPPLY_THRESHOLD = 1_750_000_000 ether;
+    uint256 internal constant PROPOSAL_THRESHOLD = 30_000_000 ether;
 
     event paramChange(string key, bytes value);
 
@@ -94,6 +95,14 @@ contract Deployer is Test {
         vm.label(relayer, "relayer");
 
         _mirrorGenesisValidatorSetParams();
+        _mirrorGenesisGovernorParams();
+    }
+
+    // the fork's governor storage was initialised by an older build with a lower proposal threshold
+    function _mirrorGenesisGovernorParams() internal {
+        if (governor.proposalThreshold() != PROPOSAL_THRESHOLD) {
+            _updateParamByGovHub("proposalThreshold", abi.encode(PROPOSAL_THRESHOLD), address(governor));
+        }
     }
 
     function _mirrorGenesisValidatorSetParams() internal {
