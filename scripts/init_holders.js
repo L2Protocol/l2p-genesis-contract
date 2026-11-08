@@ -13,10 +13,6 @@ const init_holders = [
      balance: BigInt('14975640000000000000000000000').toString(16) // 14975640000e18
   },
   {
-     address: '0xd96092d82E601457b4f215F9F8eabd75AF63b4B6',
-     balance: BigInt('10000000000000000000000000000').toString(16) // 10000000000e18
-  },
-  {
      address: '0xea9277800E88D8fd8292197d2235DDbf8A3Ab1B0',
      balance: BigInt('7500000000000000000000000000').toString(16) // 7500000000e18
   },

@@ -269,7 +269,7 @@ and the schedule and writes them straight into storage, the same way the presale
 | 3    | `duration`      | `TEAM_VESTING_DURATION` in `scripts/generate-genesis.js`, 4 × 365 days   |
 
 The balance is `TEAM_VESTING_AMOUNT` in the same file. The generator also adds up every balance it
-writes and refuses to write a genesis that does not come to exactly `TOTAL_SUPPLY` (105 billion L2P).
+writes and refuses to write a genesis that does not come to exactly `TOTAL_SUPPLY` (95 billion L2P).
 
 Advisors are paid through the same contract, deployed per advisor with the constructor
 (`beneficiary`, `start`, `cliffDuration`, `duration`) and funded from the advisors allocation with a
@@ -324,7 +324,7 @@ be bootstrapped with keyless or per-chain-signed transactions after launch.
 `genesis-dev.json` exactly as written there, compares the code hashes, and exercises them: WL2P
 deposit, transfer and withdraw, a CREATE2 deployment through each factory, and registering an
 interface implementer and manager in the ERC-1820 registry. It also checks that the balances in each
-file add up to exactly 105,000,000,000 L2P, with 20 billion in the emission pool, and runs the team
+file add up to exactly 95,000,000,000 L2P, with 20 billion in the emission pool, and runs the team
 vesting contract from its genesis storage through the cliff to the end. Regenerate the genesis files before
 running it, with `poetry run python -m scripts.generate recover` after each network.
 

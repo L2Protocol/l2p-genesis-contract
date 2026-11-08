@@ -6,7 +6,7 @@ const web3 = require('web3');
 const validators = require('./validators');
 const init_holders = require('./init_holders');
 
-const TOTAL_SUPPLY = 105_000_000_000n * 10n ** 18n;
+const TOTAL_SUPPLY = 95_000_000_000n * 10n ** 18n;
 const TEAM_VESTING_AMOUNT = 15_000_000_000n * 10n ** 18n;
 const TEAM_VESTING_CLIFF = 365n * 24n * 60n * 60n;
 const TEAM_VESTING_DURATION = 4n * TEAM_VESTING_CLIFF;

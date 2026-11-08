@@ -169,7 +169,7 @@ contract GenesisPredeploysTest is Test {
         for (uint256 i = 0; i < accounts.length; i++) {
             total += vm.parseJsonUint(json, string.concat(".alloc['", accounts[i], "'].balance"));
         }
-        assertEq(total, 105_000_000_000 ether, "total supply");
+        assertEq(total, 95_000_000_000 ether, "total supply");
         assertEq(_balance(json, EMISSION_POOL), 20_000_000_000 ether, "emission pool");
         assertEq(_balance(json, TEAM_VESTING), 15_000_000_000 ether, "team vesting");
         assertFalse(
