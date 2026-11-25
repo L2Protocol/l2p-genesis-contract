@@ -553,6 +553,35 @@
   },
   {
     "type": "function",
+    "name": "emissionMaintenance",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "since",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "period",
+        "type": "uint64",
+        "internalType": "uint64"
+      },
+      {
+        "name": "time",
+        "type": "uint128",
+        "internalType": "uint128"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "emissionPoolRemaining",
     "inputs": [],
     "outputs": [

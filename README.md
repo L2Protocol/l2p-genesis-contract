@@ -200,8 +200,12 @@ seconds before the payout, or moved in with a redelegate and out again, earns no
 The snapshot per credit contract is in `emissionStakes(credit)`, and the share paid out in a breathe
 block counts as stake from that moment, so the yield compounds. Validators that join the set get
 their first snapshot in the breathe block that elects them and earn from then on. The payout is
-shared in proportion to the stake paid on, so jailed or maintaining validators and validators StakeHub
-does not know get nothing and raise nothing, and a day without any stake is not paid out later.
+shared in proportion to the stake paid on, so jailed validators and validators StakeHub does not know
+get nothing and raise nothing, and a day without any stake is not paid out later. A validator that
+spent part of the period in Temporary Maintenance is paid only for the part it was not in it: its
+stake is scaled by the time outside maintenance over the length of the period, whether it entered
+maintenance itself or SlashIndicator put it there, and whether the stint ended before the breathe block
+or at it. That time is kept per consensus address in `emissionMaintenance(validator)`.
 
 At full stake that is at most 2.25 billion L2P a year for five years and 1.2 billion a year after
 that: 17.25 billion in ten years, and the pool runs dry a little over twelve years after the start.

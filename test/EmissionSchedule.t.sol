@@ -759,6 +759,161 @@ contract EmissionScheduleTest is Deployer {
         assertEq(l2pValidatorSet.totalEmitted(), expectedEmission);
     }
 
+    function _expectedShares(
+        uint256 paid0,
+        uint256 paid1,
+        uint256 elapsed
+    ) internal pure returns (uint256 share0, uint256 share1) {
+        uint256 emission = (paid0 + paid1) * 750 * elapsed / (APR_SCALE * YEAR);
+        share0 = emission * paid0 / (paid0 + paid1);
+        share1 = emission - share0;
+    }
+
+    function testMaintenanceLateInThePeriodCostsOnlyThatPart() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(2);
+        _setEmissionRunning(1_000_000 ether, 0, consensusAddrs, votingPowers, voteAddrs);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 9 days);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.enterMaintenance();
+
+        uint256 pooled0Before = _pooled(operatorAddrs[0]);
+        uint256 pooled1Before = _pooled(operatorAddrs[1]);
+        (uint256 share0, uint256 share1) = _expectedShares(pooled0Before * 9 / 10, pooled1Before, 10 days);
+        assertGt(share0, 0);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(_pooled(operatorAddrs[0]), pooled0Before + share0, "the nine working days were not paid");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Before + share1, "active validator paid wrongly");
+        assertEq(l2pValidatorSet.totalEmitted(), share0 + share1);
+
+        uint256 pooled0Next = _pooled(operatorAddrs[0]);
+        uint256 pooled1Next = _pooled(operatorAddrs[1]);
+        (share0, share1) = _expectedShares(pooled0Next, pooled1Next, 10 days);
+        _breathe(consensusAddrs, votingPowers, voteAddrs, 10 days);
+
+        assertEq(_pooled(operatorAddrs[0]), pooled0Next + share0, "maintenance carried into the next period");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Next + share1);
+    }
+
+    function testMaintenanceEndedJustBeforePayoutStillCostsItsTime() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(2);
+        _setEmissionRunning(1_000_000 ether, 0, consensusAddrs, votingPowers, voteAddrs);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.enterMaintenance();
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.exitMaintenance();
+        assertTrue(
+            l2pValidatorSet.isWorkingValidator(l2pValidatorSet.getCurrentValidatorIndex(consensusAddrs[0])),
+            "validator 0 should be working again"
+        );
+
+        uint256 pooled0Before = _pooled(operatorAddrs[0]);
+        uint256 pooled1Before = _pooled(operatorAddrs[1]);
+        (uint256 share0, uint256 share1) = _expectedShares(pooled0Before * 2 / 10, pooled1Before, 10 days);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(_pooled(operatorAddrs[0]), pooled0Before + share0, "the eight days in maintenance were paid");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Before + share1);
+        assertEq(l2pValidatorSet.totalEmitted(), share0 + share1);
+    }
+
+    function testMisdemeanorOfTheForcedMaintenanceExitKeepsTheEmissionShare() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(2);
+        _setEmissionRunning(1_000_000 ether, 0, consensusAddrs, votingPowers, voteAddrs);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 9 days);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.enterMaintenance();
+
+        (uint256 misdemeanorThreshold, uint256 felonyThreshold) = slashIndicator.getSlashThresholds();
+        uint256 blocksPerCount = l2pValidatorSet.getWorkingValidatorCount() * l2pValidatorSet.maintainSlashScale();
+        assertLt(misdemeanorThreshold, felonyThreshold);
+
+        uint256 pooled0Before = _pooled(operatorAddrs[0]);
+        uint256 pooled1Before = _pooled(operatorAddrs[1]);
+        (uint256 share0, uint256 share1) = _expectedShares(pooled0Before * 9 / 10, pooled1Before, 10 days);
+
+        vm.roll(block.number + misdemeanorThreshold * blocksPerCount);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(_pooled(operatorAddrs[0]), pooled0Before + share0, "the forced exit took the emission share");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Before + share1, "the other validator got the share");
+        assertEq(l2pValidatorSet.totalEmitted(), share0 + share1);
+    }
+
+    function testFelonyThatKeepsAMaintainingValidatorStillCountsItsMaintenance() public {
+        (
+            address[] memory operatorAddrs,
+            address[] memory consensusAddrs,
+            uint64[] memory votingPowers,
+            bytes[] memory voteAddrs
+        ) = _registerValidators(2);
+        _setEmissionRunning(1_000_000 ether, 0, consensusAddrs, votingPowers, voteAddrs);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(consensusAddrs[0]);
+        l2pValidatorSet.enterMaintenance();
+        uint256 enteredAt = block.timestamp;
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(address(stakeHub));
+        l2pValidatorSet.felony(consensusAddrs[0]);
+
+        uint256 idx0 = l2pValidatorSet.getCurrentValidatorIndex(consensusAddrs[0]);
+        assertFalse(l2pValidatorSet.isWorkingValidator(idx0), "validator 0 should still be maintaining");
+        (uint64 since,,) = l2pValidatorSet.emissionMaintenance(consensusAddrs[0]);
+        assertEq(since, enteredAt, "the stint was closed while it goes on");
+
+        uint256 pooled0Before = _pooled(operatorAddrs[0]);
+        uint256 pooled1Before = _pooled(operatorAddrs[1]);
+        (uint256 share0, uint256 share1) = _expectedShares(pooled0Before * 1 / 10, pooled1Before, 10 days);
+
+        vm.roll(block.number + 10);
+        vm.warp(block.timestamp + 8 days);
+        vm.prank(coinbase);
+        l2pValidatorSet.updateValidatorSetV2(consensusAddrs, votingPowers, voteAddrs);
+
+        assertEq(_pooled(operatorAddrs[0]), pooled0Before + share0, "maintenance after the felony was paid");
+        assertEq(_pooled(operatorAddrs[1]), pooled1Before + share1);
+        assertEq(l2pValidatorSet.totalEmitted(), share0 + share1);
+    }
+
     function testEmissionDustSweepNeverTouchesThePool() public {
         (, address[] memory consensusAddrs, uint64[] memory votingPowers, bytes[] memory voteAddrs) =
             _registerValidators(1);

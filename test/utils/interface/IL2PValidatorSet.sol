@@ -68,6 +68,7 @@ interface L2PValidatorSet {
     function emissionAprPhaseOne() external view returns (uint256);
     function emissionAprPhaseTwo() external view returns (uint256);
     function emissionLastTime() external view returns (uint256);
+    function emissionMaintenance(address) external view returns (uint64 since, uint64 period, uint128 time);
     function emissionPoolRemaining() external view returns (uint256);
     function emissionStakes(address) external view returns (uint128 stake, uint128 time);
     function emissionStartBlock() external view returns (uint256);

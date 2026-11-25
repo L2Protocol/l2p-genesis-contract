@@ -93,6 +93,16 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
     mapping(address => EmissionStake) public emissionStakes;
 
+    // the time a validator spent in Temporary Maintenance during the emission period that began at `period`,
+    // keyed by consensus address; `since` is when its last stint began, and counts only while it is maintaining
+    struct EmissionMaintenance {
+        uint64 since;
+        uint64 period;
+        uint128 time;
+    }
+
+    mapping(address => EmissionMaintenance) public emissionMaintenance;
+
     struct Validator {
         address consensusAddress;
         address payable feeAddress;
@@ -209,16 +219,17 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             });
         }
 
-        // step 0: accrue emission into each active validator's incoming (stake-proportional).
-        // must run before the maintenance exit below, which clears the isMaintaining flags
-        _accrueEmission();
-
-        // step 1a: force all maintaining validators to exit `Temporary Maintenance`
+        // step 0: force all maintaining validators to exit `Temporary Maintenance`
         // - 1. validators exit maintenance
         // - 2. clear all maintainInfo
         // - 3. get unjailed validators from validatorSet
         (Validator[] memory validatorSetTemp, bytes[] memory voteAddrsTemp) =
             _forceMaintainingValidatorsExit(_validatorSet, _voteAddrs);
+
+        // step 1a: accrue emission into each active validator's incoming (stake-proportional).
+        // runs after the maintenance exit, which has recorded the time spent in maintenance, so the slash of
+        // that exit cannot take an emission share, just as it cannot when the validator exits by itself
+        _accrueEmission();
 
         // step 1b: distribute incoming (gas fees + emission)
         for (uint256 i; i < currentValidatorSet.length; ++i) {
@@ -568,6 +579,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         bool isMaintaining = validatorExtraSet[index].isMaintaining;
         if (_felony(validator, index) && isMaintaining) {
             --numOfMaintaining;
+            _closeEmissionMaintenance(validator);
         }
     }
 
@@ -769,7 +781,9 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         }
 
         // a validator is paid on the smaller of its stake at the previous breathe block and its stake now, so
-        // stake has to be in place for the whole period to earn for it; jailed stake earns nothing
+        // stake has to be in place for the whole period to earn for it; jailed stake earns nothing, and the
+        // stake of a validator that spent part of the period in maintenance earns only for the rest of it
+        uint256 period = block.timestamp - fromTime;
         uint256 n = currentValidatorSet.length;
         address[] memory credits = new address[](n);
         uint256[] memory stakesNow = new uint256[](n);
@@ -786,10 +800,12 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             if (!jailed) {
                 stakesNow[i] = IStakeCredit(credit).totalPooledL2P();
             }
-            if (!starting && isWorkingValidator(i)) {
+            if (!starting && !currentValidatorSet[i].jailed) {
                 EmissionStake memory snapshot = emissionStakes[credit];
                 if (snapshot.time == fromTime) {
                     paid[i] = snapshot.stake < stakesNow[i] ? snapshot.stake : stakesNow[i];
+                    uint256 maintained = _maintainedSince(currentValidatorSet[i].consensusAddress, i, fromTime);
+                    paid[i] = maintained >= period ? 0 : paid[i].mul(period - maintained).div(period);
                     if (paid[i] != 0) {
                         totalPaid = totalPaid.add(paid[i]);
                         lastPaid = i;
@@ -859,6 +875,40 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
             uint256 stake = jailed ? 0 : IStakeCredit(credit).totalPooledL2P();
             emissionStakes[credit] = EmissionStake(uint128(stake), uint128(block.timestamp));
         }
+    }
+
+    // the time the validator at `index` has spent in maintenance since `fromTime`, the stint it is in now included
+    function _maintainedSince(
+        address validator,
+        uint256 index,
+        uint256 fromTime
+    ) private view returns (uint256 maintained) {
+        EmissionMaintenance memory m = emissionMaintenance[validator];
+        if (m.period == fromTime) {
+            maintained = m.time;
+        }
+        if (index < validatorExtraSet.length && validatorExtraSet[index].isMaintaining && m.since != 0) {
+            uint256 since = m.since > fromTime ? m.since : fromTime;
+            if (block.timestamp > since) {
+                maintained = maintained.add(block.timestamp - since);
+            }
+        }
+    }
+
+    // ends the validator's maintenance stint for the emission, adding the part of it in the current period
+    function _closeEmissionMaintenance(
+        address validator
+    ) private {
+        EmissionMaintenance memory m = emissionMaintenance[validator];
+        uint256 fromTime = emissionLastTime;
+        uint256 time = m.period == fromTime ? m.time : 0;
+        if (m.since != 0) {
+            uint256 since = m.since > fromTime ? m.since : fromTime;
+            if (block.timestamp > since) {
+                time = time.add(block.timestamp - since);
+            }
+        }
+        emissionMaintenance[validator] = EmissionMaintenance(0, uint64(fromTime), uint128(time));
     }
 
     // phase one runs for EMISSION_PHASE_ONE_DURATION from the scheduled start; phase two has no end
@@ -1240,6 +1290,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
         ++numOfMaintaining;
         validatorExtraSet[index].isMaintaining = true;
         validatorExtraSet[index].enterMaintenanceHeight = block.number;
+        emissionMaintenance[validator].since = uint64(block.timestamp);
         emit validatorEnterMaintenance(validator);
     }
 
@@ -1263,6 +1314,7 @@ contract L2PValidatorSet is IL2PValidatorSet, System, IParamSubscriber {
 
         // step 2: clear isMaintaining info
         validatorExtraSet[index].isMaintaining = false;
+        _closeEmissionMaintenance(validator);
 
         // step 3: slash the validator
         (uint256 misdemeanorThreshold, uint256 felonyThreshold) =
